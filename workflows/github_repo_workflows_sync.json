@@ -553,6 +553,15 @@
               },
               "leftValue": "={{ $json.name }}",
               "rightValue": "placeholder"
+            },
+            {
+              "id": "c0d1e2f3-a4b5-46c7-d8e9-f0a1b2c3d4e5",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              },
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "github_repo_workflows_sync"
             }
           ]
         },
