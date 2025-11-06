@@ -517,7 +517,7 @@
                 "operation": "notContains"
               },
               "leftValue": "={{ $json.name }}",
-              "rightValue": "github_repo_workflows_sync"
+              "rightValue": "github_repo_workflows_sync.json"
             }
           ]
         }
