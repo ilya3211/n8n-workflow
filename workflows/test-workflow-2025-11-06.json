@@ -1,0 +1,54 @@
+{
+  "name": "Test Workflow 2025-11-06",
+  "id": "test-workflow-20251106",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node-001",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "test_message",
+              "value": "This is a test workflow created on 2025-11-06"
+            },
+            {
+              "name": "purpose",
+              "value": "Testing GitHub sync functionality"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-node-001",
+      "name": "Set Test Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [450, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Set Test Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "test-v1",
+  "createdAt": "2025-11-06T00:00:00.000Z",
+  "updatedAt": "2025-11-06T00:00:00.000Z"
+}
