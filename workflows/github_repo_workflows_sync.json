@@ -213,7 +213,10 @@
         },
         "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Update'].json.fileName }}",
         "fileContent": "={{ $('To base').item.json.data }}",
-        "commitMessage": "=n8n_backup_sync-{{ $('Edit for Update').item.json.commitDate }}"
+        "commitMessage": "=n8n_backup_sync-{{ $('Edit for Update').item.json.commitDate }}",
+        "additionalParameters": {
+          "sha": "={{ $('Edit for Update').item.json.sha }}"
+        }
       },
       "id": "8375a926-dcc6-4776-b7ae-07a9c36ed44d",
       "name": "Update file",
@@ -384,6 +387,12 @@
               "name": "fileName",
               "type": "string",
               "value": "={{\n$('Code - InputA').item.json.dataset.name.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
+            },
+            {
+              "id": "f1a2b3c4-d5e6-47f8-a9b0-c1d2e3f4a5b6",
+              "name": "sha",
+              "type": "string",
+              "value": "={{ $('If n8n before GitHub').item.json.same.sha }}"
             }
           ]
         },
@@ -464,8 +473,41 @@
     },
     {
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={{  $json.content.base64Decode() }}",
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-e5f6-47a8-b9c0-d1e2f3a4b5c6",
+              "name": "decoded_content",
+              "type": "string",
+              "value": "={{ $json.content.base64Decode() }}"
+            },
+            {
+              "id": "b2c3d4e5-f6a7-48b9-c0d1-e2f3a4b5c6d7",
+              "name": "sha",
+              "type": "string",
+              "value": "={{ $json.sha }}"
+            },
+            {
+              "id": "c3d4e5f6-a7b8-49c0-d1e2-f3a4b5c6d7e8",
+              "name": "name",
+              "type": "string",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "id": "d4e5f6a7-b8c9-40d1-e2f3-a4b5c6d7e8f9",
+              "name": "path",
+              "type": "string",
+              "value": "={{ $json.path }}"
+            },
+            {
+              "id": "e5f6a7b8-c9d0-41e2-f3a4-b5c6d7e8f9a0",
+              "name": "id",
+              "type": "string",
+              "value": "={{ $json.name.replace('.json', '') }}"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "f970946b-6dba-41ae-89e3-fc2b35153618",
