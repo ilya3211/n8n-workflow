@@ -150,7 +150,7 @@
           "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
         },
         "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Upload'].json.fileName }}",
-        "fileContent": "={{ $node['Edit for Upload'].json.commitDate }}",
+        "fileContent": "={{ $('Edit for Upload').item.json.contentBase64 }}",
         "commitMessage": "=n8n_backup_sync-{{ $node['Edit for Upload'].json.commitDate }}",
         "additionalParameters": {
           "branch": {
@@ -394,6 +394,12 @@
               "name": "fileName",
               "type": "string",
               "value": "={{$('n8n vs GitHub').item.json.name\n.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
+            },
+            {
+              "id": "h3i4j5k6-l7m8-49n0-o1p2-q3r4s5t6u7v8",
+              "name": "contentBase64",
+              "type": "string",
+              "value": "={{ btoa(JSON.stringify($('n8n vs GitHub').item.json)) }}"
             }
           ]
         },
