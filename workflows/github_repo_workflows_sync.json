@@ -236,8 +236,11 @@
           "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
         },
         "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Update'].json.fileName }}",
-        "fileContent": "={{ $('To base').item.json.data }}",
-        "commitMessage": "=n8n_backup_sync-{{ $('Edit for Update').item.json.commitDate }}"
+        "fileContent": "={{ $('Edit for Update').item.json.contentBase64 }}",
+        "commitMessage": "=n8n_backup_sync-{{ $('Edit for Update').item.json.commitDate }}",
+        "additionalParameters": {
+          "sha": "={{ $('Edit for Update').item.json.sha }}"
+        }
       },
       "id": "8375a926-dcc6-4776-b7ae-07a9c36ed44d",
       "name": "Update file",
@@ -291,8 +294,8 @@
         "mergeByFields": {
           "values": [
             {
-              "field1": "id",
-              "field2": "id"
+              "field1": "name",
+              "field2": "name"
             }
           ]
         },
@@ -420,6 +423,18 @@
               "name": "fileName",
               "type": "string",
               "value": "={{\n$('Code - InputA').item.json.dataset.name.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
+            },
+            {
+              "id": "f1a2b3c4-d5e6-47f8-a9b0-c1d2e3f4a5b6",
+              "name": "sha",
+              "type": "string",
+              "value": "={{ $('Code - InputA').item.json.github_sha }}"
+            },
+            {
+              "id": "g2h3i4j5-k6l7-48m9-n0o1-p2q3r4s5t6u7",
+              "name": "contentBase64",
+              "type": "string",
+              "value": "={{ btoa(JSON.stringify($('Code - InputA').item.json.dataset)) }}"
             }
           ]
         },
