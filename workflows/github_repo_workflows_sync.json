@@ -233,7 +233,9 @@
         "operation": "toJson",
         "mode": "each",
         "options": {
-          "format": true
+          "format": true,
+          "fileName": "={{ $json.name }}.json",
+          "binaryPropertyName": "data"
         }
       },
       "id": "5dd48fc9-e849-4689-84a1-af3b17ce385d",
@@ -248,6 +250,7 @@
     {
       "parameters": {
         "operation": "binaryToPropery",
+        "binaryPropertyName": "data",
         "options": {}
       },
       "id": "e43e61a5-737a-43c0-a168-3c7ae7e3d7ae",
