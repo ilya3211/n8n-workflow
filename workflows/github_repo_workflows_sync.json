@@ -505,6 +505,18 @@
               "name": "id",
               "type": "string",
               "value": "={{ JSON.parse($json.content.base64Decode()).id }}"
+            },
+            {
+              "id": "f6a7b8c9-d0e1-42f3-a4b5-c6d7e8f9a0b1",
+              "name": "updatedAt",
+              "type": "string",
+              "value": "={{ JSON.parse($json.content.base64Decode()).updatedAt }}"
+            },
+            {
+              "id": "a7b8c9d0-e1f2-43a4-b5c6-d7e8f9a0b1c2",
+              "name": "createdAt",
+              "type": "string",
+              "value": "={{ JSON.parse($json.content.base64Decode()).createdAt }}"
             }
           ]
         },
