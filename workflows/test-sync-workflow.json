@@ -1,5 +1,8 @@
 {
   "name": "Test Sync Workflow",
+  "id": "test-sync-001",
+  "createdAt": "2025-11-06T13:00:00.000Z",
+  "updatedAt": "2025-11-06T13:00:00.000Z",
   "nodes": [
     {
       "parameters": {},
@@ -39,6 +42,5 @@
     }
   },
   "active": false,
-  "settings": {},
-  "id": "test-sync-001"
+  "settings": {}
 }
