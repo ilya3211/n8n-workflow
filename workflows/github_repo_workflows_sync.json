@@ -387,7 +387,7 @@
               "id": "fe4a36ef-9f04-40e3-99bd-cc517a49b440",
               "name": "commitDate",
               "type": "string",
-              "value": "={{ $now.format('dd-MM-yyyy/H:mm') }}"
+              "value": "={{ $now.format(\"dd-MM-yyyy-HH-mm\") }}"
             },
             {
               "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
@@ -422,7 +422,7 @@
               "id": "fe4a36ef-9f04-40e3-99bd-cc517a49b440",
               "name": "commitDate",
               "type": "string",
-              "value": "={{ $now.format('dd-MM-yyyy/H:mm') }}"
+              "value": "={{ $now.format(\"dd-MM-yyyy-HH-mm\") }}"
             },
             {
               "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
