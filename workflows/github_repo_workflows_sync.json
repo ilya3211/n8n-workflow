@@ -139,6 +139,7 @@
     {
       "parameters": {
         "resource": "file",
+        "operation": "create",
         "owner": {
           "__rl": true,
           "mode": "name",
@@ -150,7 +151,7 @@
           "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
         },
         "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Upload'].json.fileName }}",
-        "fileContent": "={{ $node['Edit for Upload'].json.commitDate }}",
+        "fileContent": "={{ $('To base64').item.json.data }}",
         "commitMessage": "=n8n_backup_sync-{{ $node['Edit for Upload'].json.commitDate }}",
         "additionalParameters": {
           "branch": {
