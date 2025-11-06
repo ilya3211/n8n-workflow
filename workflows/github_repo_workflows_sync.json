@@ -1,6 +1,6 @@
 {
   "createdAt": "2025-11-06T12:22:57.961Z",
-  "updatedAt": "2025-11-06T15:05:36.368Z",
+  "updatedAt": "2025-11-06T16:12:07.725Z",
   "id": "KgDSQHhNv02ZiyTV",
   "name": "github_repo_workflows_sync",
   "active": false,
@@ -248,7 +248,13 @@
         768
       ],
       "webhookId": "27218087-8df7-474d-a39f-70cfa9c34ec8",
-      "typeVersion": 1
+      "typeVersion": 1,
+      "credentials": {
+        "githubApi": {
+          "id": "1NzwISR2oVCjdFsg",
+          "name": "GitHub account"
+        }
+      }
     },
     {
       "parameters": {
@@ -439,7 +445,7 @@
       "name": "Sticky Note1",
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        0,
+        -16,
         0
       ],
       "typeVersion": 1
@@ -808,9 +814,11 @@
     "executionOrder": "v1"
   },
   "staticData": null,
-  "meta": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "pinData": {},
-  "versionId": "fd8cdc11-ab83-4661-958e-d00fb4562496",
+  "versionId": "f8009c0b-a4d1-48be-a790-cbc01840f189",
   "triggerCount": 0,
   "shared": [
     {
