@@ -212,7 +212,7 @@
           "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
         },
         "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Update'].json.fileName }}",
-        "fileContent": "={{ $('To base').item.json.data }}",
+        "fileContent": "={{ $('Edit for Update').item.json.contentBase64 }}",
         "commitMessage": "=n8n_backup_sync-{{ $('Edit for Update').item.json.commitDate }}",
         "additionalParameters": {
           "sha": "={{ $('Edit for Update').item.json.sha }}"
@@ -396,6 +396,12 @@
               "name": "sha",
               "type": "string",
               "value": "={{ $('Code - InputA').item.json.github_sha }}"
+            },
+            {
+              "id": "g2h3i4j5-k6l7-48m9-n0o1-p2q3r4s5t6u7",
+              "name": "contentBase64",
+              "type": "string",
+              "value": "={{ btoa(JSON.stringify($('Code - InputA').item.json.dataset)) }}"
             }
           ]
         },
@@ -696,7 +702,7 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Edit for Update",
             "type": "main",
             "index": 0
           }
