@@ -303,7 +303,7 @@
     {
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['same']['id']\n\n# Get all decoded workflow items\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one\nmatched = [\n    item.json \n    for item in all_decoded \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['different']['id']\n\n# Get all decoded workflow items\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one\nmatched = [\n    item.json \n    for item in all_decoded \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
       },
       "id": "c62bb578-191f-4ceb-9958-f6509343b694",
       "name": "Code - InputB",
@@ -317,7 +317,7 @@
     {
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['same']['id']\n\n# Get all decoded workflow items\nall_decoded = _('n8n').all()\n\n# Filter for the matching one\nmatched = [\n    item.json \n    for item in all_decoded \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['different']['id']\n\n# Get all n8n workflow items\nall_n8n = _('n8n').all()\n\n# Get all GitHub decoded items (with SHA)\nall_github = _('Decode to json').all()\n\n# Filter for the matching workflow from n8n\nmatched_n8n = [\n    item.json \n    for item in all_n8n \n    if item.json.get('id') == workflow_id\n]\n\n# Filter for the matching file from GitHub (to get SHA)\nmatched_github = [\n    item.json \n    for item in all_github \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it with SHA from GitHub\nif matched_n8n and matched_github:\n    return [{'json': {\n        'dataset': matched_n8n[0],\n        'github_sha': matched_github[0].get('sha', '')\n    }}]\nelif matched_n8n:\n    return [{'json': {'dataset': matched_n8n[0], 'github_sha': ''}}]\nelse:\n    return []\n"
       },
       "id": "41e1c3d9-731e-4186-be58-4bbe8b48db24",
       "name": "Code - InputA",
@@ -392,7 +392,7 @@
               "id": "f1a2b3c4-d5e6-47f8-a9b0-c1d2e3f4a5b6",
               "name": "sha",
               "type": "string",
-              "value": "={{ $('If n8n before GitHub').item.json.same.sha }}"
+              "value": "={{ $('Code - InputA').item.json.github_sha }}"
             }
           ]
         },
