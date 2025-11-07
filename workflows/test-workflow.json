@@ -1,0 +1,247 @@
+{
+  "createdAt": "2025-11-07T00:00:00.000Z",
+  "updatedAt": "2025-11-07T00:00:00.000Z",
+  "id": "TEST001",
+  "name": "Test Workflow",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "test-schedule-trigger-001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        240,
+        300
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "test-assign-001",
+              "name": "testMessage",
+              "type": "string",
+              "value": "Hello from test workflow!"
+            },
+            {
+              "id": "test-assign-002",
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "id": "test-assign-003",
+              "name": "workflowName",
+              "type": "string",
+              "value": "Test Workflow"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-set-001",
+      "name": "Set Test Data",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        460,
+        300
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "test-condition-001",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "leftValue": "={{ $json.testMessage }}",
+              "rightValue": "test"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-if-001",
+      "name": "Check Message",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        680,
+        300
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "test-result-001",
+              "name": "result",
+              "type": "string",
+              "value": "Test condition passed!"
+            },
+            {
+              "id": "test-result-002",
+              "name": "status",
+              "type": "string",
+              "value": "success"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-set-success-001",
+      "name": "Set Success",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        900,
+        200
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "test-result-fail-001",
+              "name": "result",
+              "type": "string",
+              "value": "Test condition failed!"
+            },
+            {
+              "id": "test-result-fail-002",
+              "name": "status",
+              "type": "string",
+              "value": "failed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-set-fail-001",
+      "name": "Set Failure",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        900,
+        400
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "content": "## Test Workflow\n\nThis is a simple test workflow to verify:\n- Schedule triggers\n- Data transformation\n- Conditional logic\n- Proper node connections\n\nCreated for testing n8n-GitHub integration.",
+        "height": 300,
+        "width": 400,
+        "color": 4
+      },
+      "id": "test-note-001",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        180,
+        480
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Test Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Test Data": {
+      "main": [
+        [
+          {
+            "node": "Check Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Message": {
+      "main": [
+        [
+          {
+            "node": "Set Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "test-version-001",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-07T00:00:00.000Z",
+      "updatedAt": "2025-11-07T00:00:00.000Z",
+      "role": "workflow:owner",
+      "workflowId": "TEST001",
+      "projectId": "TEST-PROJECT"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-11-07T00:00:00.000Z",
+      "updatedAt": "2025-11-07T00:00:00.000Z",
+      "id": "test-tag-001",
+      "name": "test"
+    },
+    {
+      "createdAt": "2025-11-07T00:00:00.000Z",
+      "updatedAt": "2025-11-07T00:00:00.000Z",
+      "id": "test-tag-002",
+      "name": "integration"
+    }
+  ]
+}
