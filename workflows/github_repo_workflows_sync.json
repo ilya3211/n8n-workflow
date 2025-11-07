@@ -274,8 +274,8 @@
         "mergeByFields": {
           "values": [
             {
-              "field1": "name",
-              "field2": "name"
+              "field1": "id",
+              "field2": "id"
             }
           ]
         }
@@ -312,7 +312,7 @@
       ],
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name\nworkflow_name = _('If n8n before GitHub').first().json['different']['name']\n\n# Get all decoded workflow items\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one by name\nmatched = [\n    item.json\n    for item in all_decoded\n    if item.json.get('name') == workflow_name\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+        "pythonCode": "# Get the desired workflow name\nworkflow_id = _('If n8n before GitHub').first().json['different']['id']\n\n# Get all decoded workflow items\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one\nmatched = [\n    item.json \n    for item in all_decoded \n    if item.json.get('id') == workflow_id\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
       },
       "typeVersion": 2
     },
@@ -326,7 +326,7 @@
       ],
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name\nworkflow_name = _('If n8n before GitHub').first().json['different']['name']\n\n# Get all n8n workflows\nall_n8n = _('n8n').all()\n\n# Get all decoded GitHub files\nall_github = _('GitHub').all()\n\n# Filter for the matching workflow from n8n by name\nmatched_n8n = [\n    item.json\n    for item in all_n8n\n    if item.json.get('name') == workflow_name\n]\n\n# Filter for the matching file from GitHub to get SHA by name\nmatched_github = [\n    item.json\n    for item in all_github\n    if item.json.get('content', '')\n]\n\n# Try to find GitHub file by matching decoded content name\ngithub_sha = ''\nif matched_github and matched_n8n:\n    for gh_item in matched_github:\n        try:\n            import json\n            import base64\n            decoded = json.loads(base64.b64decode(gh_item.get('content', '')).decode('utf-8'))\n            if decoded.get('name') == workflow_name:\n                github_sha = gh_item.get('sha', '')\n                break\n        except:\n            pass\n\n# Return the n8n workflow with github_sha\nif matched_n8n:\n    return [{'json': {\n        'dataset': matched_n8n[0],\n        'github_sha': github_sha\n    }}]\nelse:\n    return []\n"
+        "pythonCode": "# Get the desired workflow id from compareDatasets\nworkflow_id = _('If n8n before GitHub').first().json['different']['id']\n\n# Get all n8n workflows\nall_n8n = _('n8n').all()\n\n# Get all decoded GitHub files\nall_github = _('GitHub').all()\n\n# Filter for the matching workflow from n8n\nmatched_n8n = [\n    item.json\n    for item in all_n8n\n    if item.json.get('id') == workflow_id\n]\n\n# Filter for the matching file from GitHub to get SHA\nmatched_github = [\n    item.json\n    for item in all_github\n    if item.json.get('content', '')\n]\n\n# Try to find GitHub file by matching decoded content ID\ngithub_sha = ''\nif matched_github and matched_n8n:\n    for gh_item in matched_github:\n        try:\n            import json\n            import base64\n            decoded = json.loads(base64.b64decode(gh_item.get('content', '')).decode('utf-8'))\n            if decoded.get('id') == workflow_id:\n                github_sha = gh_item.get('sha', '')\n                break\n        except:\n            pass\n\n# Return the n8n workflow with github_sha\nif matched_n8n:\n    return [{'json': {\n        'dataset': matched_n8n[0],\n        'github_sha': github_sha\n    }}]\nelse:\n    return []\n"
       },
       "typeVersion": 2
     },
