@@ -1,6 +1,6 @@
 {
   "createdAt": "2025-11-07T16:29:00.790Z",
-  "updatedAt": "2025-11-07T17:11:42.165Z",
+  "updatedAt": "2025-11-07T19:46:43.021Z",
   "id": "dho2MYTMBfMa5WTJ",
   "name": "Test Workflow 2025-11-06",
   "active": false,
@@ -41,6 +41,17 @@
         464,
         304
       ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        288
+      ],
+      "id": "eee0c047-3670-4f2e-aa54-a99fa69cf727",
+      "name": "When clicking ‘Execute workflow’"
     }
   ],
   "connections": {
@@ -60,7 +71,7 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "0bd5f7d7-0007-4a20-a486-568483e1a050",
+  "versionId": "71f7069e-679c-4114-bbb1-c59e5b091fa0",
   "triggerCount": 0,
   "shared": [
     {
@@ -73,16 +84,16 @@
   ],
   "tags": [
     {
-      "createdAt": "2025-11-07T17:02:42.959Z",
-      "updatedAt": "2025-11-07T17:02:42.959Z",
-      "id": "1HMy7UEBG6FqfYlK",
-      "name": "github3"
-    },
-    {
       "createdAt": "2025-11-07T17:11:03.677Z",
       "updatedAt": "2025-11-07T17:11:03.677Z",
       "id": "hFM1F9aTXbM7yDP5",
       "name": "github4"
+    },
+    {
+      "createdAt": "2025-11-07T17:02:42.959Z",
+      "updatedAt": "2025-11-07T17:02:42.959Z",
+      "id": "1HMy7UEBG6FqfYlK",
+      "name": "github3"
     }
   ]
 }
