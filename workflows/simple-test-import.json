@@ -1,0 +1,74 @@
+{
+  "name": "Simple Test Import",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1e2d3c4-b5a6-7890-cdef-123456789012",
+              "name": "test_message",
+              "value": "Этот workflow был импортирован из GitHub! ✨",
+              "type": "string"
+            },
+            {
+              "id": "a9b8c7d6-e5f4-3210-fedc-ba9876543210",
+              "name": "import_date",
+              "value": "2025-11-07",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "name": "Set Test Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Test Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "simpleTestImport001",
+  "tags": [
+    {
+      "createdAt": "2025-06-20T15:54:28.386Z",
+      "updatedAt": "2025-06-20T15:54:28.386Z",
+      "id": "oiAlopPbS90SR7YK",
+      "name": "github2"
+    }
+  ],
+  "createdAt": "2025-11-07T20:45:00.000Z",
+  "updatedAt": "2025-11-07T20:45:00.000Z"
+}
