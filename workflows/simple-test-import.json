@@ -1,6 +1,6 @@
 {
   "createdAt": "2025-11-07T19:56:57.066Z",
-  "updatedAt": "2025-11-07T19:58:26.604Z",
+  "updatedAt": "2025-11-07T20:15:36.307Z",
   "id": "3p9BnMh17UdYoa2L",
   "name": "Simple Test Import",
   "active": false,
@@ -24,7 +24,7 @@
             {
               "id": "f1e2d3c4-b5a6-7890-cdef-123456789012",
               "name": "test_message",
-              "value": "Этот workflow был импортирован из GitHub! ✨",
+              "value": "Этот workflow был импортирован из GitHub! 1✨",
               "type": "string"
             },
             {
@@ -66,7 +66,7 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "1ab6f69e-250c-497a-952e-30aaa0ff8bb6",
+  "versionId": "d067dc6b-a674-4bf5-b4cd-0022e5f17023",
   "triggerCount": 0,
   "shared": [
     {
