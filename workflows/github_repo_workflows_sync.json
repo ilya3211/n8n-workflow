@@ -121,6 +121,20 @@
       "typeVersion": 1
     },
     {
+      "id": "c1d2e3f4-a5b6-7890-cdef-fedcba987654",
+      "name": "Clean n8n workflows",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        900,
+        200
+      ],
+      "parameters": {
+        "language": "python",
+        "pythonCode": "import copy\n\n# Get all n8n workflows\nall_workflows = _input.all()\n\nresults = []\nfor item in all_workflows:\n    workflow = copy.deepcopy(item.json)\n    \n    # Remove metadata fields that n8n auto-generates\n    fields_to_remove = [\n        'id', 'createdAt', 'updatedAt', 'versionId',\n        'meta', 'pinData', 'staticData', 'shared',\n        'isArchived', 'triggerCount'\n    ]\n    \n    for field in fields_to_remove:\n        workflow.pop(field, None)\n    \n    # Clean tags - remove IDs and timestamps\n    if 'tags' in workflow and isinstance(workflow['tags'], list):\n        workflow['tags'] = [\n            {'name': tag.get('name')} if isinstance(tag, dict) else tag\n            for tag in workflow['tags']\n        ]\n    \n    results.append({'json': workflow})\n\nreturn results"
+      },
+      "typeVersion": 2
+    },
+    {
       "id": "404e87cf-e561-4807-865a-26a6109c228f",
       "name": "Upload file",
       "type": "n8n-nodes-base.github",
@@ -312,7 +326,7 @@
       ],
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name from input (compareDatasets Different output)\n# 'keys' contains the matching key field (name)\nworkflow_name = _input.first()['json']['keys']['name']\n\n# Get all n8n workflows to find the ID\nall_n8n = _('n8n').all()\n\n# Get all decoded workflow items from GitHub\nall_decoded = _('Decode to json').all()\n\n# Find matching workflow from GitHub\nmatched_github = None\nfor item in all_decoded:\n    if item.json.get('name') == workflow_name:\n        matched_github = item.json\n        break\n\n# Find matching workflow from n8n to get the ID\nmatched_n8n_id = None\nfor item in all_n8n:\n    if item.json.get('name') == workflow_name:\n        matched_n8n_id = item.json.get('id')\n        break\n\n# If both found, merge: GitHub data + n8n ID\nif matched_github and matched_n8n_id:\n    # Update the GitHub workflow with n8n ID\n    matched_github['id'] = matched_n8n_id\n    return [{'json': {'dataset': matched_github}}]\nelse:\n    return []\n"
+        "pythonCode": "# Get the desired workflow name from input (compareDatasets Different output)\n# 'keys' contains the matching key field (name)\nworkflow_name = _input.first()['json']['keys']['name']\n\n# Get all n8n workflows (original, with IDs) to find the ID\nall_n8n_original = _('n8n').all()\n\n# Get all decoded workflow items from GitHub\nall_decoded = _('Decode to json').all()\n\n# Find matching workflow from GitHub\nmatched_github = None\nfor item in all_decoded:\n    if item.json.get('name') == workflow_name:\n        matched_github = item.json\n        break\n\n# Find matching workflow from n8n to get the ID\nmatched_n8n_id = None\nfor item in all_n8n_original:\n    if item.json.get('name') == workflow_name:\n        matched_n8n_id = item.json.get('id')\n        break\n\n# If both found, merge: GitHub data + n8n ID\nif matched_github and matched_n8n_id:\n    # Update the GitHub workflow with n8n ID\n    matched_github['id'] = matched_n8n_id\n    return [{'json': {'dataset': matched_github}}]\nelse:\n    return []\n"
       },
       "typeVersion": 2
     },
@@ -326,7 +340,7 @@
       ],
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name from input (compareDatasets Different output)\n# 'keys' contains the matching key field (name)\nworkflow_name = _input.first()['json']['keys']['name']\n\n# Get all n8n workflows\nall_n8n = _('n8n').all()\n\n# Get decoded GitHub workflows and raw GitHub data (they have matching indexes)\nall_decoded = _('Decode to json').all()\nall_github_raw = _('GitHub').all()\n\n# Filter for the matching workflow from n8n by name\nmatched_n8n = [\n    item.json\n    for item in all_n8n\n    if item.json.get('name') == workflow_name\n]\n\n# Find SHA from GitHub using indexes (Decode to json and GitHub have same order)\ngithub_sha = ''\nif matched_n8n:\n    for i, decoded_item in enumerate(all_decoded):\n        if decoded_item.json.get('name') == workflow_name:\n            # Use the same index to get SHA from raw GitHub data\n            if i < len(all_github_raw):\n                gh_item = all_github_raw[i].json\n                if isinstance(gh_item, dict):\n                    github_sha = gh_item.get('sha', '')\n                else:\n                    github_sha = getattr(gh_item, 'sha', '')\n            break\n\n# Return the n8n workflow with github_sha\nif matched_n8n:\n    return [{'json': {\n        'dataset': matched_n8n[0],\n        'github_sha': github_sha\n    }}]\nelse:\n    return []\n"
+        "pythonCode": "# Get the desired workflow name from input (compareDatasets Different output)\n# 'keys' contains the matching key field (name)\nworkflow_name = _input.first()['json']['keys']['name']\n\n# Get all n8n workflows (cleaned version for export to GitHub)\nall_n8n_clean = _('Clean n8n workflows').all()\n\n# Get decoded GitHub workflows and raw GitHub data (they have matching indexes)\nall_decoded = _('Decode to json').all()\nall_github_raw = _('GitHub').all()\n\n# Filter for the matching workflow from n8n by name\nmatched_n8n = [\n    item.json\n    for item in all_n8n_clean\n    if item.json.get('name') == workflow_name\n]\n\n# Find SHA from GitHub using indexes (Decode to json and GitHub have same order)\ngithub_sha = ''\nif matched_n8n:\n    for i, decoded_item in enumerate(all_decoded):\n        if decoded_item.json.get('name') == workflow_name:\n            # Use the same index to get SHA from raw GitHub data\n            if i < len(all_github_raw):\n                gh_item = all_github_raw[i].json\n                if isinstance(gh_item, dict):\n                    github_sha = gh_item.get('sha', '')\n                else:\n                    github_sha = getattr(gh_item, 'sha', '')\n            break\n\n# Return the n8n workflow with github_sha\nif matched_n8n:\n    return [{'json': {\n        'dataset': matched_n8n[0],\n        'github_sha': github_sha\n    }}]\nelse:\n    return []\n"
       },
       "typeVersion": 2
     },
@@ -561,6 +575,17 @@
   "versionId": "f8dfa54c-eb76-40f0-80d8-18cdab254091",
   "connections": {
     "n8n": {
+      "main": [
+        [
+          {
+            "node": "Clean n8n workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean n8n workflows": {
       "main": [
         [
           {
