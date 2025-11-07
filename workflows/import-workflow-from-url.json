@@ -1,10 +1,10 @@
 {
   "createdAt": "2025-11-07T19:45:45.905Z",
-  "updatedAt": "2025-11-07T19:46:23.510Z",
+  "updatedAt": "2025-11-07T19:50:18.925Z",
   "id": "brWN5VVuxJlQT3f0",
   "name": "Import Workflow from URL",
   "active": false,
-  "isArchived": false,
+  "isArchived": true,
   "nodes": [
     {
       "parameters": {},
@@ -112,7 +112,7 @@
   "staticData": null,
   "meta": null,
   "pinData": {},
-  "versionId": "69f05e7d-f0c3-4ffa-b6f8-3a95b7703150",
+  "versionId": "504ccd14-2840-4b84-990d-d565a919b38e",
   "triggerCount": 0,
   "shared": [
     {
