@@ -396,13 +396,13 @@
               "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
               "name": "fileName",
               "type": "string",
-              "value": "={{\n$('Code - InputA').item.json.dataset.name.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
+              "value": "={{\n$('Code - InputA').first().json.dataset.name.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
             },
             {
               "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
               "name": "github_sha",
               "type": "string",
-              "value": "={{ $('Code - InputA').item.json.github_sha }}"
+              "value": "={{ $('Code - InputA').first().json.github_sha }}"
             }
           ]
         }
