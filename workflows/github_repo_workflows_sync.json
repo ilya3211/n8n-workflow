@@ -295,10 +295,10 @@
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $json.dataset.id }}"
+          "value": "={{ JSON.parse($json.dataset).id }}"
         },
         "requestOptions": {},
-        "workflowObject": "={{ $json.dataset.toJsonString() }}"
+        "workflowObject": "={{ $json.dataset }}"
       },
       "typeVersion": 1
     },
@@ -312,7 +312,7 @@
       ],
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name from input (compareDatasets Different output)\n# 'keys' contains the matching key field (name)\nworkflow_name = _input.first()['json']['keys']['name']\n\n# Get all decoded workflow items from GitHub\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one by name\nmatched = [\n    item.json\n    for item in all_decoded\n    if item.json.get('name') == workflow_name\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+        "pythonCode": "import json\n\n# Get the desired workflow name from input (compareDatasets Different output)\n# 'keys' contains the matching key field (name)\nworkflow_name = _input.first()['json']['keys']['name']\n\n# Get all n8n workflows to find the ID\nall_n8n = _('n8n').all()\n\n# Get all decoded workflow items from GitHub\nall_decoded = _('Decode to json').all()\n\n# Find matching workflow from GitHub\nmatched_github = None\nfor item in all_decoded:\n    if item.json.get('name') == workflow_name:\n        matched_github = item.json\n        break\n\n# Find matching workflow from n8n to get the ID\nmatched_n8n_id = None\nfor item in all_n8n:\n    if item.json.get('name') == workflow_name:\n        matched_n8n_id = item.json.get('id')\n        break\n\n# If both found, merge: GitHub data + n8n ID\nif matched_github and matched_n8n_id:\n    # Update the GitHub workflow with n8n ID\n    matched_github['id'] = matched_n8n_id\n    return [{'json': {'dataset': json.dumps(matched_github)}}]\nelse:\n    return []\n"
       },
       "typeVersion": 2
     },
