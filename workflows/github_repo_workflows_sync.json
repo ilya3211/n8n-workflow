@@ -214,7 +214,7 @@
           "mode": "name",
           "value": "={{ $('Set GitHub Details').item.json.github_account_name }}"
         },
-        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Update'].json.fileName }}",
+        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $json.fileName }}",
         "resource": "file",
         "operation": "edit",
         "repository": {
@@ -223,9 +223,9 @@
           "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
         },
         "fileContent": "={{ $('To base').item.json.data }}",
-        "commitMessage": "=n8n_backup_sync-{{ $('Edit for Update').item.json.commitDate }}",
+        "commitMessage": "=n8n_backup_sync-{{ $json.commitDate }}",
         "additionalParameters": {
-          "sha": "={{ $('Code - InputA').item.json.github_sha }}"
+          "sha": "={{ $json.github_sha }}"
         }
       },
       "typeVersion": 1
@@ -397,6 +397,12 @@
               "name": "fileName",
               "type": "string",
               "value": "={{\n$('Code - InputA').item.json.dataset.name.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
+            },
+            {
+              "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+              "name": "github_sha",
+              "type": "string",
+              "value": "={{ $('Code - InputA').item.json.github_sha }}"
             }
           ]
         }
