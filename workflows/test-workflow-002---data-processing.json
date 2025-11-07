@@ -1,0 +1,353 @@
+{
+  "createdAt": "2025-11-07T14:30:27.643Z",
+  "updatedAt": "2025-11-07T17:11:16.061Z",
+  "id": "dPCsighsNtCWTsbX",
+  "name": "Test Workflow 002 - Data Processing",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "test-webhook-002",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "test-webhook-002",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        464
+      ],
+      "webhookId": "test-webhook-002-id",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Process incoming data\nimport json\n\ndata = []\nfor item in _input.all():\n    json_data = item.json\n    \n    # Add processing metadata\n    processed = {\n        'original': json_data,\n        'processed_at': '2025-11-07',\n        'status': 'processed',\n        'item_count': len(str(json_data))\n    }\n    data.append({'json': processed})\n\nreturn data\n"
+      },
+      "id": "test-code-002",
+      "name": "Process Data",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        464,
+        368
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "test-filter-condition-002",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "processed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-filter-002",
+      "name": "Filter Processed",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        688,
+        368
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "test-enrich-001",
+              "name": "enriched",
+              "type": "boolean",
+              "value": true
+            },
+            {
+              "id": "test-enrich-002",
+              "name": "workflow_name",
+              "type": "string",
+              "value": "Test Workflow 002"
+            },
+            {
+              "id": "test-enrich-003",
+              "name": "execution_id",
+              "type": "string",
+              "value": "={{ $execution.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-enrich-002",
+      "name": "Enrich Data",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        912,
+        368
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "url": "https://httpbin.org/post",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={{ JSON.stringify($json) }}"
+            },
+            {
+              "name": "test_id",
+              "value": "TEST002"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-http-002",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        688,
+        560
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "options": {}
+      },
+      "id": "test-merge-002",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        1136,
+        464
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Data processed successfully\", \"items\": $json } }}",
+        "options": {}
+      },
+      "id": "test-response-002",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1360,
+        464
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "content": "## Test Workflow 002\n\n**Purpose:** Data Processing Pipeline\n\n### Flow:\n1. Receive webhook data\n2. Process with Python code\n3. Filter valid items\n4. Enrich with metadata\n5. Send HTTP request\n6. Merge results\n7. Return response\n\n**Status:** Test workflow for GitHub integration",
+        "height": 380,
+        "width": 360,
+        "color": 5
+      },
+      "id": "test-note-002-1",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        192,
+        624
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Processing Branch\n\nHandles data transformation",
+        "color": 3
+      },
+      "id": "test-note-002-2",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        400,
+        240
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## HTTP Branch\n\nExternal API call",
+        "color": 6
+      },
+      "id": "test-note-002-3",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        400,
+        640
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "test-metadata-001",
+              "name": "http_status",
+              "type": "string",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "id": "test-metadata-002",
+              "name": "api_response",
+              "type": "string",
+              "value": "received"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-extract-002",
+      "name": "Extract HTTP Response",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        912,
+        560
+      ],
+      "typeVersion": 3.4
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Data": {
+      "main": [
+        [
+          {
+            "node": "Filter Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Processed": {
+      "main": [
+        [
+          {
+            "node": "Enrich Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Data": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract HTTP Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract HTTP Response": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "d45bd87f-cb57-47ec-8d59-6d2150db0d6a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-07T14:30:27.643Z",
+      "updatedAt": "2025-11-07T14:30:27.643Z",
+      "role": "workflow:owner",
+      "workflowId": "dPCsighsNtCWTsbX",
+      "projectId": "6RdnQGWBgqXn6vl2"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-11-07T17:02:42.959Z",
+      "updatedAt": "2025-11-07T17:02:42.959Z",
+      "id": "1HMy7UEBG6FqfYlK",
+      "name": "github3"
+    },
+    {
+      "createdAt": "2025-11-07T17:11:03.677Z",
+      "updatedAt": "2025-11-07T17:11:03.677Z",
+      "id": "hFM1F9aTXbM7yDP5",
+      "name": "github4"
+    }
+  ]
+}

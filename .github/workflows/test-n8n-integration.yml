@@ -1,0 +1,170 @@
+name: Test n8n Workflows Integration
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'workflows/**/*.json'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'workflows/**/*.json'
+  workflow_dispatch:
+
+jobs:
+  validate-workflows:
+    name: Validate n8n Workflow Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate JSON syntax
+        run: |
+          echo "Validating JSON files in workflows directory..."
+          failed=0
+          for file in workflows/*.json; do
+            if [ -f "$file" ]; then
+              echo "Checking $file..."
+              if ! python -m json.tool "$file" > /dev/null 2>&1; then
+                echo "❌ Invalid JSON: $file"
+                failed=1
+              else
+                echo "✅ Valid JSON: $file"
+              fi
+            fi
+          done
+
+          if [ $failed -eq 1 ]; then
+            echo "JSON validation failed!"
+            exit 1
+          fi
+          echo "All JSON files are valid!"
+
+      - name: Check workflow structure
+        run: |
+          echo "Checking n8n workflow structure..."
+          python3 << 'EOF'
+          import json
+          import sys
+          from pathlib import Path
+
+          failed = False
+          workflows_dir = Path("workflows")
+
+          required_fields = ["name", "nodes", "connections"]
+
+          for json_file in workflows_dir.glob("*.json"):
+              print(f"\nChecking structure of {json_file.name}...")
+
+              with open(json_file, 'r') as f:
+                  data = json.load(f)
+
+              # Check required fields
+              missing_fields = [field for field in required_fields if field not in data]
+              if missing_fields:
+                  print(f"❌ Missing required fields in {json_file.name}: {missing_fields}")
+                  failed = True
+                  continue
+
+              # Validate nodes structure
+              if not isinstance(data.get("nodes"), list):
+                  print(f"❌ 'nodes' must be a list in {json_file.name}")
+                  failed = True
+                  continue
+
+              # Validate connections structure
+              if not isinstance(data.get("connections"), dict):
+                  print(f"❌ 'connections' must be a dict in {json_file.name}")
+                  failed = True
+                  continue
+
+              # Check node structure
+              for idx, node in enumerate(data["nodes"]):
+                  if "name" not in node:
+                      print(f"❌ Node {idx} missing 'name' in {json_file.name}")
+                      failed = True
+                  if "type" not in node:
+                      print(f"❌ Node {idx} missing 'type' in {json_file.name}")
+                      failed = True
+
+              if not failed:
+                  print(f"✅ Valid structure: {json_file.name}")
+                  print(f"   - Workflow: {data.get('name')}")
+                  print(f"   - Nodes: {len(data.get('nodes', []))}")
+                  print(f"   - Active: {data.get('active', False)}")
+
+          if failed:
+              print("\n❌ Workflow structure validation failed!")
+              sys.exit(1)
+          else:
+              print("\n✅ All workflows have valid structure!")
+          EOF
+
+      - name: Check for Upload file node issues
+        run: |
+          echo "Checking for Upload file node configuration..."
+          python3 << 'EOF'
+          import json
+          import sys
+          from pathlib import Path
+
+          issues_found = False
+          workflows_dir = Path("workflows")
+
+          for json_file in workflows_dir.glob("*.json"):
+              with open(json_file, 'r') as f:
+                  data = json.load(f)
+
+              for node in data.get("nodes", []):
+                  # Check GitHub nodes with file resource
+                  if (node.get("type") == "n8n-nodes-base.github" and
+                      node.get("parameters", {}).get("resource") == "file"):
+
+                      node_name = node.get("name", "Unknown")
+                      params = node.get("parameters", {})
+
+                      # Check if operation is specified
+                      if "operation" not in params:
+                          print(f"⚠️  Warning: Node '{node_name}' in {json_file.name} missing 'operation' parameter")
+                          issues_found = True
+
+                      # Check for binaryData without operation
+                      if params.get("binaryData") == True and "operation" not in params:
+                          print(f"❌ Error: Node '{node_name}' in {json_file.name} uses binaryData without operation")
+                          issues_found = True
+
+                      # Check for proper fileContent or binaryData
+                      operation = params.get("operation")
+                      if operation in ["create", "edit"]:
+                          has_content = "fileContent" in params or params.get("binaryData") == True
+                          if not has_content:
+                              print(f"❌ Error: Node '{node_name}' in {json_file.name} missing fileContent or binaryData")
+                              issues_found = True
+                          else:
+                              print(f"✅ Node '{node_name}' in {json_file.name} properly configured")
+
+          if issues_found:
+              print("\n⚠️  Some issues found in workflow configurations")
+              sys.exit(1)
+          else:
+              print("\n✅ All GitHub file nodes are properly configured!")
+          EOF
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "================================"
+          echo "n8n Workflows Integration Test Summary"
+          echo "================================"
+          echo "✅ All checks completed"
+          echo "Check the logs above for details"

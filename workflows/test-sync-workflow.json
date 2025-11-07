@@ -1,15 +1,21 @@
 {
-  "name": "Test Sync Workflow",
-  "id": "test-sync-001",
-  "createdAt": "2025-11-06T13:00:00.000Z",
+  "createdAt": "2025-11-07T16:29:00.784Z",
   "updatedAt": "2025-11-07T20:35:00.000Z",
+  "id": "Btof8MBZTOfU4XSC",
+  "name": "Test Sync Workflow",
+  "active": false,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {},
       "name": "Start",
       "type": "n8n-nodes-base.start",
       "typeVersion": 1,
-      "position": [250, 300]
+      "position": [
+        256,
+        304
+      ],
+      "id": "b443984b-4843-45e6-9faa-eef82f2705e4"
     },
     {
       "parameters": {
@@ -20,12 +26,17 @@
               "value": "Синхронизация работает! Обновлено из GitHub 🔄"
             }
           ]
-        }
+        },
+        "options": {}
       },
       "name": "Set",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [450, 300]
+      "position": [
+        464,
+        304
+      ],
+      "id": "15ed94b5-db7a-4f0a-add2-75c7eab7af35"
     }
   ],
   "connections": {
@@ -41,6 +52,33 @@
       ]
     }
   },
-  "active": false,
-  "settings": {}
+  "settings": {},
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "39cff821-420e-4f86-86c4-c358916f8b21",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-07T16:29:00.784Z",
+      "updatedAt": "2025-11-07T16:29:00.784Z",
+      "role": "workflow:owner",
+      "workflowId": "Btof8MBZTOfU4XSC",
+      "projectId": "6RdnQGWBgqXn6vl2"
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-11-07T17:02:42.959Z",
+      "updatedAt": "2025-11-07T17:02:42.959Z",
+      "id": "1HMy7UEBG6FqfYlK",
+      "name": "github3"
+    },
+    {
+      "createdAt": "2025-11-07T17:11:03.677Z",
+      "updatedAt": "2025-11-07T17:11:03.677Z",
+      "id": "hFM1F9aTXbM7yDP5",
+      "name": "github4"
+    }
+  ]
 }
