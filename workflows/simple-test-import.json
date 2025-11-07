@@ -42,7 +42,6 @@
       ]
     }
   ],
-  "pinData": {},
   "connections": {
     "When clicking 'Test workflow'": {
       "main": [
@@ -57,18 +56,10 @@
     }
   },
   "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "id": "simpleTestImport001",
+  "settings": {},
   "tags": [
     {
-      "createdAt": "2025-06-20T15:54:28.386Z",
-      "updatedAt": "2025-06-20T15:54:28.386Z",
-      "id": "oiAlopPbS90SR7YK",
       "name": "github2"
     }
-  ],
-  "createdAt": "2025-11-07T20:45:00.000Z",
-  "updatedAt": "2025-11-07T20:45:00.000Z"
+  ]
 }
