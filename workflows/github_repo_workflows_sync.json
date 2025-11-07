@@ -443,35 +443,16 @@
     {
       "id": "c1909c33-d3f0-4d24-b4d7-fdf1e8074398",
       "name": "If n8n before GitHub",
-      "type": "n8n-nodes-base.if",
+      "type": "n8n-nodes-base.code",
       "position": [
         1740,
         400
       ],
       "parameters": {
-        "options": {},
-        "conditions": {
-          "options": {
-            "version": 2,
-            "leftValue": "",
-            "caseSensitive": true,
-            "typeValidation": "strict"
-          },
-          "combinator": "and",
-          "conditions": [
-            {
-              "id": "8ccf743b-3a66-44c0-a30b-72a1d4bcf60b",
-              "operator": {
-                "type": "dateTime",
-                "operation": "before"
-              },
-              "leftValue": "={{ $json.different.updatedAt.inputA }}",
-              "rightValue": "={{ $json.different.updatedAt.inputB }}"
-            }
-          ]
-        }
+        "language": "python",
+        "pythonCode": "# Get the compareDatasets output\nitem = _('n8n vs GitHub').first().json\n\n# Check if updatedAt exists in different section and in both versions\nhas_updated_at_diff = (\n    'different' in item and \n    'updatedAt' in item['different'] and\n    'inputA' in item['different']['updatedAt'] and\n    'inputB' in item['different']['updatedAt'] and\n    item['different']['updatedAt']['inputA'] is not None and\n    item['different']['updatedAt']['inputB'] is not None\n)\n\nif has_updated_at_diff:\n    # Both have updatedAt, compare them\n    from datetime import datetime\n    \n    n8n_updated = item['different']['updatedAt']['inputA']\n    github_updated = item['different']['updatedAt']['inputB']\n    \n    try:\n        n8n_dt = datetime.fromisoformat(n8n_updated.replace('Z', '+00:00'))\n        github_dt = datetime.fromisoformat(github_updated.replace('Z', '+00:00'))\n        \n        # If n8n is newer or equal, update GitHub from n8n (output 1)\n        if n8n_dt >= github_dt:\n            return [[],  [{'json': item}]]\n        else:\n            # GitHub is newer, update n8n from GitHub (output 0)\n            return [[{'json': item}], []]\n    except:\n        # Date parsing failed, default to updating n8n from GitHub\n        return [[{'json': item}], []]\nelse:\n    # No updatedAt to compare, default: update n8n from GitHub (output 0)\n    # This means GitHub is the source of truth when dates are unknown\n    return [[{'json': item}], []]\n"
       },
-      "typeVersion": 2.2
+      "typeVersion": 2
     },
     {
       "id": "fd1022a0-4f67-4603-bf94-68415776c587",

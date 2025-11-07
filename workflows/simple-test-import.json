@@ -1,10 +1,5 @@
 {
-  "createdAt": "2025-11-07T19:56:57.066Z",
-  "updatedAt": "2025-11-07T20:15:36.307Z",
-  "id": "3p9BnMh17UdYoa2L",
   "name": "Simple Test Import",
-  "active": false,
-  "isArchived": false,
   "nodes": [
     {
       "parameters": {},
@@ -14,7 +9,7 @@
       "typeVersion": 1,
       "position": [
         240,
-        304
+        300
       ]
     },
     {
@@ -24,7 +19,7 @@
             {
               "id": "f1e2d3c4-b5a6-7890-cdef-123456789012",
               "name": "test_message",
-              "value": "Этот workflow был импортирован из GitHub! 1✨",
+              "value": "Этот workflow был импортирован и обновлён из GitHub! ✨✅",
               "type": "string"
             },
             {
@@ -42,8 +37,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        464,
-        304
+        460,
+        300
       ]
     }
   ],
@@ -60,29 +55,11 @@
       ]
     }
   },
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "staticData": null,
-  "meta": null,
-  "pinData": {},
-  "versionId": "d067dc6b-a674-4bf5-b4cd-0022e5f17023",
-  "triggerCount": 0,
-  "shared": [
-    {
-      "createdAt": "2025-11-07T19:56:57.066Z",
-      "updatedAt": "2025-11-07T19:56:57.066Z",
-      "role": "workflow:owner",
-      "workflowId": "3p9BnMh17UdYoa2L",
-      "projectId": "6RdnQGWBgqXn6vl2"
-    }
-  ],
+  "active": false,
+  "settings": {},
   "tags": [
     {
-      "createdAt": "2025-11-07T17:11:03.677Z",
-      "updatedAt": "2025-11-07T17:11:03.677Z",
-      "id": "hFM1F9aTXbM7yDP5",
-      "name": "github4"
+      "name": "github2"
     }
   ]
 }
