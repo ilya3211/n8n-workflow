@@ -1,5 +1,10 @@
 {
+  "createdAt": "2025-11-07T16:29:00.784Z",
+  "updatedAt": "2025-11-07T20:02:27.020Z",
+  "id": "Btof8MBZTOfU4XSC",
   "name": "Test Sync Workflow",
+  "active": false,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {},
@@ -32,6 +37,17 @@
         304
       ],
       "id": "15ed94b5-db7a-4f0a-add2-75c7eab7af35"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        16,
+        304
+      ],
+      "id": "ffeaf3ee-20cd-4200-a76a-09577cbf4e52",
+      "name": "When clicking ‘Execute workflow’"
     }
   ],
   "connections": {
@@ -47,11 +63,33 @@
       ]
     }
   },
-  "active": false,
   "settings": {},
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "227c59f1-6e69-4ba5-9569-2be55b6097af",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-07T16:29:00.784Z",
+      "updatedAt": "2025-11-07T16:29:00.784Z",
+      "role": "workflow:owner",
+      "workflowId": "Btof8MBZTOfU4XSC",
+      "projectId": "6RdnQGWBgqXn6vl2"
+    }
+  ],
   "tags": [
     {
-      "name": "github2"
+      "createdAt": "2025-11-07T17:11:03.677Z",
+      "updatedAt": "2025-11-07T17:11:03.677Z",
+      "id": "hFM1F9aTXbM7yDP5",
+      "name": "github4"
+    },
+    {
+      "createdAt": "2025-11-07T17:02:42.959Z",
+      "updatedAt": "2025-11-07T17:02:42.959Z",
+      "id": "1HMy7UEBG6FqfYlK",
+      "name": "github3"
     }
   ]
 }
