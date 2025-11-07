@@ -1,7 +1,7 @@
 {
-  "createdAt": "2025-11-07T00:00:00.000Z",
-  "updatedAt": "2025-11-07T00:00:00.000Z",
-  "id": "TEST001",
+  "createdAt": "2025-11-07T16:29:00.797Z",
+  "updatedAt": "2025-11-07T17:12:08.230Z",
+  "id": "XV9bwNqM5AtTfXUq",
   "name": "Test Workflow",
   "active": false,
   "isArchived": false,
@@ -11,8 +11,7 @@
         "rule": {
           "interval": [
             {
-              "field": "hours",
-              "hoursInterval": 1
+              "field": "hours"
             }
           ]
         }
@@ -22,7 +21,7 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "position": [
         240,
-        300
+        304
       ],
       "typeVersion": 1.2
     },
@@ -56,8 +55,8 @@
       "name": "Set Test Data",
       "type": "n8n-nodes-base.set",
       "position": [
-        460,
-        300
+        464,
+        304
       ],
       "typeVersion": 3.4
     },
@@ -89,8 +88,8 @@
       "name": "Check Message",
       "type": "n8n-nodes-base.if",
       "position": [
-        680,
-        300
+        688,
+        304
       ],
       "typeVersion": 2.2
     },
@@ -118,8 +117,8 @@
       "name": "Set Success",
       "type": "n8n-nodes-base.set",
       "position": [
-        900,
-        200
+        912,
+        208
       ],
       "typeVersion": 3.4
     },
@@ -147,7 +146,7 @@
       "name": "Set Failure",
       "type": "n8n-nodes-base.set",
       "position": [
-        900,
+        912,
         400
       ],
       "typeVersion": 3.4
@@ -163,7 +162,7 @@
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        180,
+        192,
         480
       ],
       "typeVersion": 1
@@ -215,33 +214,31 @@
     "executionOrder": "v1"
   },
   "staticData": null,
-  "meta": {
-    "templateCredsSetupCompleted": true
-  },
+  "meta": null,
   "pinData": {},
-  "versionId": "test-version-001",
+  "versionId": "f71631f0-8784-4c66-97ba-0d97fd721ec4",
   "triggerCount": 0,
   "shared": [
     {
-      "createdAt": "2025-11-07T00:00:00.000Z",
-      "updatedAt": "2025-11-07T00:00:00.000Z",
+      "createdAt": "2025-11-07T16:29:00.797Z",
+      "updatedAt": "2025-11-07T16:29:00.797Z",
       "role": "workflow:owner",
-      "workflowId": "TEST001",
-      "projectId": "TEST-PROJECT"
+      "workflowId": "XV9bwNqM5AtTfXUq",
+      "projectId": "6RdnQGWBgqXn6vl2"
     }
   ],
   "tags": [
     {
-      "createdAt": "2025-11-07T00:00:00.000Z",
-      "updatedAt": "2025-11-07T00:00:00.000Z",
-      "id": "test-tag-001",
-      "name": "test"
+      "createdAt": "2025-11-07T17:02:42.959Z",
+      "updatedAt": "2025-11-07T17:02:42.959Z",
+      "id": "1HMy7UEBG6FqfYlK",
+      "name": "github3"
     },
     {
-      "createdAt": "2025-11-07T00:00:00.000Z",
-      "updatedAt": "2025-11-07T00:00:00.000Z",
-      "id": "test-tag-002",
-      "name": "integration"
+      "createdAt": "2025-11-07T17:11:03.677Z",
+      "updatedAt": "2025-11-07T17:11:03.677Z",
+      "id": "hFM1F9aTXbM7yDP5",
+      "name": "github4"
     }
   ]
 }
