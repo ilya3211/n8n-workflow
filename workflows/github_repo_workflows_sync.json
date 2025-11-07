@@ -91,7 +91,7 @@
         "owner": {
           "__rl": true,
           "mode": "name",
-          "value": "={{ $('Set GitHub Details').item.json.github_account_name }}"
+          "value": "={{ $('Set GitHub Details').first().json.github_account_name }}"
         },
         "filePath": "={{ $json.path }}",
         "resource": "file",
@@ -99,7 +99,7 @@
         "repository": {
           "__rl": true,
           "mode": "name",
-          "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
+          "value": "={{ $('Set GitHub Details').first().json.github_repo_name }}"
         },
         "asBinaryProperty": false,
         "additionalParameters": {}
@@ -133,17 +133,17 @@
         "owner": {
           "__rl": true,
           "mode": "name",
-          "value": "={{ $('Set GitHub Details').item.json.github_account_name }}"
+          "value": "={{ $('Set GitHub Details').first().json.github_account_name }}"
         },
-        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $node['Edit for Upload'].json.fileName }}",
+        "filePath": "={{ $('Set GitHub Details').first().json.repo_workflows_path }}/{{ $json.fileName }}",
         "resource": "file",
         "repository": {
           "__rl": true,
           "mode": "name",
-          "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
+          "value": "={{ $('Set GitHub Details').first().json.github_repo_name }}"
         },
-        "fileContent": "={{ $('To base64').item.json.data }}",
-        "commitMessage": "=n8n_backup_sync-{{ $node['Edit for Upload'].json.commitDate }}",
+        "fileContent": "={{ $('To base64').first().json.data }}",
+        "commitMessage": "=n8n_backup_sync-{{ $json.commitDate }}",
         "additionalParameters": {
           "branch": {
             "branch": "main"
@@ -212,17 +212,17 @@
         "owner": {
           "__rl": true,
           "mode": "name",
-          "value": "={{ $('Set GitHub Details').item.json.github_account_name }}"
+          "value": "={{ $('Set GitHub Details').first().json.github_account_name }}"
         },
-        "filePath": "={{ $('Set GitHub Details').item.json.repo_workflows_path }}/{{ $json.fileName }}",
+        "filePath": "={{ $('Set GitHub Details').first().json.repo_workflows_path }}/{{ $json.fileName }}",
         "resource": "file",
         "operation": "edit",
         "repository": {
           "__rl": true,
           "mode": "name",
-          "value": "={{ $('Set GitHub Details').item.json.github_repo_name }}"
+          "value": "={{ $('Set GitHub Details').first().json.github_repo_name }}"
         },
-        "fileContent": "={{ $('To base').item.json.data }}",
+        "fileContent": "={{ $('To base').first().json.data }}",
         "commitMessage": "=n8n_backup_sync-{{ $json.commitDate }}",
         "additionalParameters": {
           "sha": "={{ $json.github_sha }}"
