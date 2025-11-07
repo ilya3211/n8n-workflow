@@ -455,9 +455,9 @@
             "version": 2,
             "leftValue": "",
             "caseSensitive": true,
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
-          "combinator": "and",
+          "combinator": "or",
           "conditions": [
             {
               "id": "8ccf743b-3a66-44c0-a30b-72a1d4bcf60b",
@@ -467,6 +467,14 @@
               },
               "leftValue": "={{ $json.different.updatedAt.inputA }}",
               "rightValue": "={{ $json.different.updatedAt.inputB }}"
+            },
+            {
+              "id": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
+              "operator": {
+                "type": "boolean",
+                "operation": "notExists"
+              },
+              "leftValue": "={{ $json.different.updatedAt.inputB }}"
             }
           ]
         }
