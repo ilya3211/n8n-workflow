@@ -443,16 +443,52 @@
     {
       "id": "c1909c33-d3f0-4d24-b4d7-fdf1e8074398",
       "name": "If n8n before GitHub",
-      "type": "n8n-nodes-base.code",
+      "type": "n8n-nodes-base.switch",
       "position": [
         1740,
         400
       ],
       "parameters": {
-        "language": "python",
-        "pythonCode": "# Get the compareDatasets output\nitem = _('n8n vs GitHub').first().json\n\n# Check if updatedAt exists in different section and in both versions\nhas_updated_at_diff = (\n    'different' in item and \n    'updatedAt' in item['different'] and\n    'inputA' in item['different']['updatedAt'] and\n    'inputB' in item['different']['updatedAt'] and\n    item['different']['updatedAt']['inputA'] is not None and\n    item['different']['updatedAt']['inputB'] is not None\n)\n\nif has_updated_at_diff:\n    # Both have updatedAt, compare them\n    from datetime import datetime\n    \n    n8n_updated = item['different']['updatedAt']['inputA']\n    github_updated = item['different']['updatedAt']['inputB']\n    \n    try:\n        n8n_dt = datetime.fromisoformat(n8n_updated.replace('Z', '+00:00'))\n        github_dt = datetime.fromisoformat(github_updated.replace('Z', '+00:00'))\n        \n        # If n8n is newer or equal, update GitHub from n8n (output 1)\n        if n8n_dt >= github_dt:\n            return [[],  [{'json': item}]]\n        else:\n            # GitHub is newer, update n8n from GitHub (output 0)\n            return [[{'json': item}], []]\n    except:\n        # Date parsing failed, default to updating n8n from GitHub\n        return [[{'json': item}], []]\nelse:\n    # No updatedAt to compare, default: update n8n from GitHub (output 0)\n    # This means GitHub is the source of truth when dates are unknown\n    return [[{'json': item}], []]\n"
+        "options": {},
+        "rules": {
+          "rules": [
+            {
+              "id": "rule0",
+              "outputKey": "0",
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "combinator": "or",
+                "conditions": [
+                  {
+                    "id": "cond1",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "notExists"
+                    },
+                    "leftValue": "={{ $json.different?.updatedAt?.inputB }}"
+                  },
+                  {
+                    "id": "cond2",
+                    "operator": {
+                      "type": "dateTime",
+                      "operation": "after"
+                    },
+                    "leftValue": "={{ $json.different?.updatedAt?.inputB }}",
+                    "rightValue": "={{ $json.different?.updatedAt?.inputA }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "fallbackOutput": 1
       },
-      "typeVersion": 2
+      "typeVersion": 3.2
     },
     {
       "id": "fd1022a0-4f67-4603-bf94-68415776c587",
