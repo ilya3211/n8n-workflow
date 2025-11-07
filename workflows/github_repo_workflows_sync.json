@@ -312,7 +312,7 @@
       ],
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name from compareDatasets\n# 'keys' contains the matching key field (name)\nworkflow_name = _('Route by update time').first().json['keys']['name']\n\n# Get all decoded workflow items from GitHub\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one by name\nmatched = [\n    item.json\n    for item in all_decoded\n    if item.json.get('name') == workflow_name\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+        "pythonCode": "# Get the desired workflow name from input (compareDatasets Different output)\n# 'keys' contains the matching key field (name)\nworkflow_name = _input.first()['json']['keys']['name']\n\n# Get all decoded workflow items from GitHub\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one by name\nmatched = [\n    item.json\n    for item in all_decoded\n    if item.json.get('name') == workflow_name\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
       },
       "typeVersion": 2
     },
@@ -326,7 +326,7 @@
       ],
       "parameters": {
         "language": "python",
-        "pythonCode": "# Get the desired workflow name from compareDatasets\n# 'keys' contains the matching key field (name)\nworkflow_name = _('Route by update time').first().json['keys']['name']\n\n# Get all n8n workflows\nall_n8n = _('n8n').all()\n\n# Get decoded GitHub workflows and raw GitHub data (they have matching indexes)\nall_decoded = _('Decode to json').all()\nall_github_raw = _('GitHub').all()\n\n# Filter for the matching workflow from n8n by name\nmatched_n8n = [\n    item.json\n    for item in all_n8n\n    if item.json.get('name') == workflow_name\n]\n\n# Find SHA from GitHub using indexes (Decode to json and GitHub have same order)\ngithub_sha = ''\nif matched_n8n:\n    for i, decoded_item in enumerate(all_decoded):\n        if decoded_item.json.get('name') == workflow_name:\n            # Use the same index to get SHA from raw GitHub data\n            if i < len(all_github_raw):\n                gh_item = all_github_raw[i].json\n                if isinstance(gh_item, dict):\n                    github_sha = gh_item.get('sha', '')\n                else:\n                    github_sha = getattr(gh_item, 'sha', '')\n            break\n\n# Return the n8n workflow with github_sha\nif matched_n8n:\n    return [{'json': {\n        'dataset': matched_n8n[0],\n        'github_sha': github_sha\n    }}]\nelse:\n    return []\n"
+        "pythonCode": "# Get the desired workflow name from input (compareDatasets Different output)\n# 'keys' contains the matching key field (name)\nworkflow_name = _input.first()['json']['keys']['name']\n\n# Get all n8n workflows\nall_n8n = _('n8n').all()\n\n# Get decoded GitHub workflows and raw GitHub data (they have matching indexes)\nall_decoded = _('Decode to json').all()\nall_github_raw = _('GitHub').all()\n\n# Filter for the matching workflow from n8n by name\nmatched_n8n = [\n    item.json\n    for item in all_n8n\n    if item.json.get('name') == workflow_name\n]\n\n# Find SHA from GitHub using indexes (Decode to json and GitHub have same order)\ngithub_sha = ''\nif matched_n8n:\n    for i, decoded_item in enumerate(all_decoded):\n        if decoded_item.json.get('name') == workflow_name:\n            # Use the same index to get SHA from raw GitHub data\n            if i < len(all_github_raw):\n                gh_item = all_github_raw[i].json\n                if isinstance(gh_item, dict):\n                    github_sha = gh_item.get('sha', '')\n                else:\n                    github_sha = getattr(gh_item, 'sha', '')\n            break\n\n# Return the n8n workflow with github_sha\nif matched_n8n:\n    return [{'json': {\n        'dataset': matched_n8n[0],\n        'github_sha': github_sha\n    }}]\nelse:\n    return []\n"
       },
       "typeVersion": 2
     },
@@ -442,41 +442,17 @@
     },
     {
       "id": "c1909c33-d3f0-4d24-b4d7-fdf1e8074398",
-      "name": "Route by update time",
-      "type": "n8n-nodes-base.set",
-      "position": [
-        1740,
-        400
-      ],
-      "parameters": {
-        "keepOnlySet": false,
-        "options": {},
-        "assignments": {
-          "assignments": [
-            {
-              "id": "route_flag",
-              "name": "route_to",
-              "type": "string",
-              "value": "={{ $json.different && $json.different.updatedAt && $json.different.updatedAt.inputA && $json.different.updatedAt.inputB ? ($json.different.updatedAt.inputA >= $json.different.updatedAt.inputB ? 'update_github' : 'update_n8n') : 'update_n8n' }}"
-            }
-          ]
-        }
-      },
-      "typeVersion": 3.4
-    },
-    {
-      "id": "route-check-node",
-      "name": "Check Route",
+      "name": "If n8n before GitHub",
       "type": "n8n-nodes-base.if",
       "position": [
-        1940,
+        1740,
         400
       ],
       "parameters": {
         "conditions": {
           "string": [
             {
-              "value1": "={{ $json.route_to }}",
+              "value1": "={{ $json.different && $json.different.updatedAt && $json.different.updatedAt.inputA && $json.different.updatedAt.inputB ? ($json.different.updatedAt.inputA >= $json.different.updatedAt.inputB ? 'update_github' : 'update_n8n') : 'update_n8n' }}",
               "value2": "update_n8n"
             }
           ]
@@ -706,7 +682,7 @@
         [],
         [
           {
-            "node": "Route by update time",
+            "node": "If n8n before GitHub",
             "type": "main",
             "index": 0
           }
@@ -780,18 +756,7 @@
         ]
       ]
     },
-    "Route by update time": {
-      "main": [
-        [
-          {
-            "node": "Check Route",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Check Route": {
+    "If n8n before GitHub": {
       "main": [
         [
           {
