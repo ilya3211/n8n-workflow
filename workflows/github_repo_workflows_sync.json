@@ -151,6 +151,7 @@
         },
         "filePath": "={{ $('Set GitHub Details').first().json.repo_workflows_path }}/{{ $json.fileName }}",
         "resource": "file",
+        "operation": "create",
         "repository": {
           "__rl": true,
           "mode": "name",
