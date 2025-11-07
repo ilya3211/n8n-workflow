@@ -442,53 +442,48 @@
     },
     {
       "id": "c1909c33-d3f0-4d24-b4d7-fdf1e8074398",
-      "name": "If n8n before GitHub",
-      "type": "n8n-nodes-base.switch",
+      "name": "Route by update time",
+      "type": "n8n-nodes-base.set",
       "position": [
         1740,
         400
       ],
       "parameters": {
         "options": {},
-        "rules": {
-          "rules": [
+        "assignments": {
+          "assignments": [
             {
-              "id": "rule0",
-              "outputKey": "0",
-              "conditions": {
-                "options": {
-                  "version": 2,
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose"
-                },
-                "combinator": "or",
-                "conditions": [
-                  {
-                    "id": "cond1",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "notExists"
-                    },
-                    "leftValue": "={{ $json.different?.updatedAt?.inputB }}"
-                  },
-                  {
-                    "id": "cond2",
-                    "operator": {
-                      "type": "dateTime",
-                      "operation": "after"
-                    },
-                    "leftValue": "={{ $json.different?.updatedAt?.inputB }}",
-                    "rightValue": "={{ $json.different?.updatedAt?.inputA }}"
-                  }
-                ]
-              }
+              "id": "route_flag",
+              "name": "route_to",
+              "type": "string",
+              "value": "={{ $json.different && $json.different.updatedAt && $json.different.updatedAt.inputA && $json.different.updatedAt.inputB ? ($json.different.updatedAt.inputA >= $json.different.updatedAt.inputB ? 'update_github' : 'update_n8n') : 'update_n8n' }}"
             }
           ]
         },
-        "fallbackOutput": 1
+        "mode": "manual",
+        "duplicateItem": false
       },
-      "typeVersion": 3.2
+      "typeVersion": 3.4
+    },
+    {
+      "id": "route-check-node",
+      "name": "Check Route",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1940,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.route_to }}",
+              "value2": "update_n8n"
+            }
+          ]
+        }
+      },
+      "typeVersion": 1
     },
     {
       "id": "fd1022a0-4f67-4603-bf94-68415776c587",
@@ -712,7 +707,7 @@
         [],
         [
           {
-            "node": "If n8n before GitHub",
+            "node": "Route by update time",
             "type": "main",
             "index": 0
           }
@@ -786,7 +781,18 @@
         ]
       ]
     },
-    "If n8n before GitHub": {
+    "Route by update time": {
+      "main": [
+        [
+          {
+            "node": "Check Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Route": {
       "main": [
         [
           {
