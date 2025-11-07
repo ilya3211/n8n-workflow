@@ -452,7 +452,7 @@
         "conditions": {
           "string": [
             {
-              "value1": "={{ $json.different && $json.different.updatedAt && $json.different.updatedAt.inputA && $json.different.updatedAt.inputB ? ($json.different.updatedAt.inputA >= $json.different.updatedAt.inputB ? 'update_github' : 'update_n8n') : 'update_n8n' }}",
+              "value1": "={{ $json.different && $json.different.updatedAt ? ($json.different.updatedAt.inputA && $json.different.updatedAt.inputB ? ($json.different.updatedAt.inputA >= $json.different.updatedAt.inputB ? 'update_github' : 'update_n8n') : ($json.different.updatedAt.inputA && !$json.different.updatedAt.inputB ? 'update_github' : 'update_n8n')) : 'neither' }}",
               "value2": "update_n8n"
             }
           ]
