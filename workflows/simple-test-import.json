@@ -20,7 +20,7 @@
             {
               "id": "f1e2d3c4-b5a6-7890-cdef-123456789012",
               "name": "test_message",
-              "value": "Этот workflow был импортирован и обновлён из GitHub!0 ✨✅",
+              "value": "Этот workflow был импортирован и обновлён из GitHub!01 ✨✅",
               "type": "string"
             },
             {
