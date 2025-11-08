@@ -25,7 +25,7 @@
       "parameters": {
         "operation": "create",
         "requestOptions": {},
-        "workflowObject": "={{ $json.workflow.toJsonString() }}"
+        "workflowObject": "={{ $json.toJsonString()  }}"
       },
       "typeVersion": 1
     },
@@ -276,6 +276,30 @@
       "typeVersion": 1
     },
     {
+      "id": "eee2bfd1-e0e3-4db5-b4da-1bbc189f45e7",
+      "name": "n8n vs GitHub",
+      "type": "n8n-nodes-base.compareDatasets",
+      "position": [
+        1260,
+        280
+      ],
+      "parameters": {
+        "options": {
+          "disableDotNotation": false,
+          "skipPairing": false
+        },
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "name",
+              "field2": "name"
+            }
+          ]
+        }
+      },
+      "typeVersion": 2.3
+    },
+    {
       "id": "a94d4e6e-a250-4fe8-a092-a9e1697745c5",
       "name": "Update workflow in n8n",
       "type": "n8n-nodes-base.n8n",
@@ -288,12 +312,40 @@
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $json.n8n_id }}"
+          "value": "={{ $json.dataset.id }}"
         },
         "requestOptions": {},
-        "workflowObject": "={{ $json.workflow.toJsonString() }}"
+        "workflowObject": "={{ $json.dataset.toJsonString() }}"
       },
       "typeVersion": 1
+    },
+    {
+      "id": "09d43ee5-7a21-47cd-8bec-45ae16e8422f",
+      "name": "Code - InputB",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2120,
+        300
+      ],
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Get the desired workflow name from compareDatasets\n# Try multiple ways to get the name\nroute_data = _('Check Route').first().json\n\n# Try to get name from keys field (if it exists)\nif 'keys' in route_data and 'name' in route_data['keys']:\n    workflow_name = route_data['keys']['name']\n# Otherwise try to get from different.name field\nelif 'different' in route_data and 'name' in route_data['different']:\n    # Get name from different data\n    diff = route_data['different']\n    if 'inputB' in diff.get('name', {}):\n        workflow_name = diff['name']['inputB']\n    elif 'inputA' in diff.get('name', {}):\n        workflow_name = diff['name']['inputA']\n    else:\n        workflow_name = diff.get('name')\nelse:\n    # Fallback: try to get from any available workflow data\n    all_decoded = _('Decode to json').all()\n    if all_decoded:\n        # Just return first one as fallback\n        return [{'json': {'dataset': all_decoded[0].json}}]\n    return []\n\n# Get all decoded workflow items from GitHub\nall_decoded = _('Decode to json').all()\n\n# Filter for the matching one by name\nmatched = [\n    item.json\n    for item in all_decoded\n    if item.json.get('name') == workflow_name\n]\n\n# If there's a match, return it (or empty if none)\nif matched:\n    return [{'json': {'dataset': matched[0]}}]\nelse:\n    return []\n"
+      },
+      "typeVersion": 2
+    },
+    {
+      "id": "d3be821f-a331-4dc7-993d-6af348fb1fb2",
+      "name": "Code - InputA",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2120,
+        560
+      ],
+      "parameters": {
+        "language": "python",
+        "pythonCode": "# Get the desired workflow name from compareDatasets\n# Try multiple ways to get the name\nroute_data = _('Check Route').first().json\n\n# Try to get name from keys field (if it exists)\nif 'keys' in route_data and 'name' in route_data['keys']:\n    workflow_name = route_data['keys']['name']\n# Otherwise try to get from different.name field\nelif 'different' in route_data and 'name' in route_data['different']:\n    diff = route_data['different']\n    if 'inputA' in diff.get('name', {}):\n        workflow_name = diff['name']['inputA']\n    elif 'inputB' in diff.get('name', {}):\n        workflow_name = diff['name']['inputB']\n    else:\n        workflow_name = diff.get('name')\nelse:\n    # Fallback: try to get from any available workflow data\n    all_n8n = _('n8n').all()\n    if all_n8n:\n        return [{'json': {'dataset': all_n8n[0].json, 'github_sha': ''}}]\n    return []\n\n# Get all n8n workflows\nall_n8n = _('n8n').all()\n\n# Get decoded GitHub workflows and raw GitHub data (they have matching indexes)\nall_decoded = _('Decode to json').all()\nall_github_raw = _('GitHub').all()\n\n# Filter for the matching workflow from n8n by name\nmatched_n8n = [\n    item.json\n    for item in all_n8n\n    if item.json.get('name') == workflow_name\n]\n\n# Find SHA from GitHub using indexes (Decode to json and GitHub have same order)\ngithub_sha = ''\nif matched_n8n:\n    for i, decoded_item in enumerate(all_decoded):\n        if decoded_item.json.get('name') == workflow_name:\n            # Use the same index to get SHA from raw GitHub data\n            if i < len(all_github_raw):\n                gh_item = all_github_raw[i].json\n                if isinstance(gh_item, dict):\n                    github_sha = gh_item.get('sha', '')\n                else:\n                    github_sha = getattr(gh_item, 'sha', '')\n            break\n\n# Return the n8n workflow with github_sha\nif matched_n8n:\n    return [{'json': {\n        'dataset': matched_n8n[0],\n        'github_sha': github_sha\n    }}]\nelse:\n    return []\n"
+      },
+      "typeVersion": 2
     },
     {
       "id": "2a173594-512b-4308-b685-540bac3e2338",
@@ -306,7 +358,7 @@
       "parameters": {
         "mode": "raw",
         "options": {},
-        "jsonOutput": "={{ $json.workflow }}"
+        "jsonOutput": "={{ $json.dataset }}"
       },
       "typeVersion": 3.4
     },
@@ -332,7 +384,7 @@
               "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
               "name": "fileName",
               "type": "string",
-              "value": "={{ $json.workflow.name.trim().replace(/\\s+/g, '-').toLowerCase() }}.json"
+              "value": "={{$('n8n vs GitHub').item.json.name\n.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
             }
           ]
         }
@@ -361,13 +413,13 @@
               "id": "b0fe1bcc-e79c-4a6b-b8b4-44222c8bf4e8",
               "name": "fileName",
               "type": "string",
-              "value": "={{ $json.workflow.name.trim().replace(/\\s+/g, '-').toLowerCase() }}.json"
+              "value": "={{\n$('Code - InputA').first().json.dataset.name.trim().replace(/\\s+/g, '-').toLowerCase()\n}}.json"
             },
             {
               "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
               "name": "github_sha",
               "type": "string",
-              "value": "={{ $json.github_sha }}"
+              "value": "={{ $('Code - InputA').first().json.github_sha }}"
             }
           ]
         }
@@ -402,6 +454,50 @@
         "width": 340,
         "height": 340,
         "content": "## IF ONLY IN GITHUB\nCreate new workflow in n8n"
+      },
+      "typeVersion": 1
+    },
+    {
+      "id": "c1909c33-d3f0-4d24-b4d7-fdf1e8074398",
+      "name": "Route by update time",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1740,
+        400
+      ],
+      "parameters": {
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "route_flag",
+              "name": "route_to",
+              "type": "string",
+              "value": "={{ $json.different && $json.different.updatedAt ? ($json.different.updatedAt.inputA && $json.different.updatedAt.inputB ? ($json.different.updatedAt.inputA >= $json.different.updatedAt.inputB ? 'update_github' : 'update_n8n') : ($json.different.updatedAt.inputA && !$json.different.updatedAt.inputB ? 'update_github' : 'update_n8n')) : 'neither' }}"
+            }
+          ]
+        },
+        "keepOnlySet": false
+      },
+      "typeVersion": 3.4
+    },
+    {
+      "id": "route-check-node",
+      "name": "Check Route",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1940,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.route_to }}",
+              "value2": "update_n8n"
+            }
+          ]
+        }
       },
       "typeVersion": 1
     },
@@ -496,54 +592,6 @@
         }
       },
       "typeVersion": 3.4
-    },
-    {
-      "id": "simple-sync-decision",
-      "name": "Simple Sync Decision",
-      "type": "n8n-nodes-base.code",
-      "position": [
-        1260,
-        280
-      ],
-      "parameters": {
-        "language": "javaScript",
-        "jsCode": "// Simple Sync Decision - \u0432\u0441\u0435 \u0440\u0435\u0448\u0435\u043d\u0438\u044f \u0432 \u043e\u0434\u043d\u043e\u043c \u043c\u0435\u0441\u0442\u0435\n\n// Get all workflows from both sources\nconst n8nWorkflows = $('Clean n8n workflows').all().map(item => item.json);\nconst githubWorkflows = $('Decode to json').all().map(item => item.json);\nconst githubRaw = $('GitHub').all();\nconst n8nFull = $('n8n').all();\n\nconst results = [];\n\n// Compare each GitHub workflow with n8n\nfor (let i = 0; i < githubWorkflows.length; i++) {\n    const ghWorkflow = githubWorkflows[i];\n    const ghRaw = githubRaw[i].json;\n    const n8nCleaned = n8nWorkflows.find(w => w.name === ghWorkflow.name);\n\n    if (!n8nCleaned) {\n        // Only in GitHub -> create in n8n\n        results.push({\n            json: {\n                action: 'create_in_n8n',\n                workflow: ghWorkflow,\n                name: ghWorkflow.name\n            }\n        });\n        continue;\n    }\n\n    // Both exist - check updatedAt\n    const ghUpdatedAt = ghWorkflow.updatedAt;\n    const n8nUpdatedAt = n8nCleaned.updatedAt; // Should be undefined after Clean\n\n    console.log(`Comparing ${ghWorkflow.name}:`);\n    console.log(`  GitHub updatedAt: ${ghUpdatedAt}`);\n    console.log(`  n8n updatedAt: ${n8nUpdatedAt}`);\n\n    if (ghUpdatedAt && !n8nUpdatedAt) {\n        // GitHub has updatedAt, n8n doesn't -> update n8n from GitHub\n        const n8nOriginal = n8nFull.find(item => item.json.name === ghWorkflow.name);\n        console.log(`  Decision: UPDATE n8n from GitHub`);\n        results.push({\n            json: {\n                action: 'update_n8n',\n                workflow: ghWorkflow,\n                n8n_id: n8nOriginal ? n8nOriginal.json.id : null,\n                name: ghWorkflow.name\n            }\n        });\n    } else if (n8nUpdatedAt && !ghUpdatedAt) {\n        // n8n has updatedAt, GitHub doesn't -> update GitHub\n        console.log(`  Decision: UPDATE GitHub from n8n`);\n        results.push({\n            json: {\n                action: 'update_github',\n                workflow: n8nCleaned,\n                github_sha: ghRaw.sha,\n                name: n8nCleaned.name\n            }\n        });\n    } else if (ghUpdatedAt && n8nUpdatedAt) {\n        // Both have updatedAt - compare timestamps\n        if (ghUpdatedAt > n8nUpdatedAt) {\n            console.log(`  Decision: UPDATE n8n (GitHub newer: ${ghUpdatedAt} > ${n8nUpdatedAt})`);\n            const n8nOriginal = n8nFull.find(item => item.json.name === ghWorkflow.name);\n            results.push({\n                json: {\n                    action: 'update_n8n',\n                    workflow: ghWorkflow,\n                    n8n_id: n8nOriginal ? n8nOriginal.json.id : null,\n                    name: ghWorkflow.name\n                }\n            });\n        } else if (n8nUpdatedAt > ghUpdatedAt) {\n            console.log(`  Decision: UPDATE GitHub (n8n newer: ${n8nUpdatedAt} > ${ghUpdatedAt})`);\n            results.push({\n                json: {\n                    action: 'update_github',\n                    workflow: n8nCleaned,\n                    github_sha: ghRaw.sha,\n                    name: n8nCleaned.name\n                }\n            });\n        } else {\n            console.log(`  Decision: SKIP (same timestamp: ${ghUpdatedAt})`);\n        }\n    } else {\n        console.log(`  Decision: SKIP (no timestamps)`);\n    }\n}\n\n// Check for n8n-only workflows\nfor (const n8nCleaned of n8nWorkflows) {\n    const ghWorkflow = githubWorkflows.find(w => w.name === n8nCleaned.name);\n    if (!ghWorkflow) {\n        // Only in n8n -> create in GitHub\n        results.push({\n            json: {\n                action: 'create_in_github',\n                workflow: n8nCleaned,\n                name: n8nCleaned.name\n            }\n        });\n    }\n}\n\nconsole.log(`\\nTotal actions: ${results.length}`);\nreturn results;\n"
-      },
-      "typeVersion": 2
-    },
-    {
-      "id": "switch-by-action",
-      "name": "Switch by Action",
-      "type": "n8n-nodes-base.switch",
-      "position": [
-        1500,
-        280
-      ],
-      "parameters": {
-        "options": {},
-        "dataPropertyName": "action",
-        "rules": {
-          "rules": [
-            {
-              "value": "update_n8n",
-              "output": 0
-            },
-            {
-              "value": "update_github",
-              "output": 1
-            },
-            {
-              "value": "create_in_8n",
-              "output": 2
-            },
-            {
-              "value": "create_in_github",
-              "output": 3
-            }
-          ]
-        }
-      },
-      "typeVersion": 3
     }
   ],
   "active": true,
@@ -652,6 +700,60 @@
         ]
       ]
     },
+    "Code - InputA": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - InputB": {
+      "main": [
+        [
+          {
+            "node": "Update workflow in n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n vs GitHub": {
+      "main": [
+        [
+          {
+            "node": "Json file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route by update time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route by update time",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create new workflow in n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Decode to json": {
       "main": [
         [
@@ -712,54 +814,40 @@
         ]
       ]
     },
+    "Route by update time": {
+      "main": [
+        [
+          {
+            "node": "Check Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Route": {
+      "main": [
+        [
+          {
+            "node": "Code - InputB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code - InputA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "List files from repo": {
       "main": [
         [
           {
             "node": "Filter",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Simple Sync Decision": {
-      "main": [
-        [
-          {
-            "node": "Switch by Action",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch by Action": {
-      "main": [
-        [
-          {
-            "node": "Update workflow in n8n",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Create new workflow in n8n",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Json file",
             "type": "main",
             "index": 0
           }
