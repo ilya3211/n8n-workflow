@@ -1,6 +1,10 @@
 {
+  "createdAt": "2025-11-08T16:04:29.796Z",
+  "updatedAt": "2025-11-08T16:04:29.796Z",
+  "id": "blESlHavnvqzNZRS",
   "name": "Google Gemini - NO PROXY (Test First)",
   "active": false,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -182,8 +186,25 @@
   "settings": {
     "executionOrder": "v1"
   },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "079e88dc-74c4-44f9-8f78-c91531f1c309",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-11-08T16:04:29.796Z",
+      "updatedAt": "2025-11-08T16:04:29.796Z",
+      "role": "workflow:owner",
+      "workflowId": "blESlHavnvqzNZRS",
+      "projectId": "XaQYNu2ASfYERted"
+    }
+  ],
   "tags": [
     {
+      "createdAt": "2025-11-08T16:04:28.560Z",
+      "updatedAt": "2025-11-08T16:04:28.560Z",
+      "id": "74Tuq0920RyLXkUw",
       "name": "Gemini API Proxy"
     }
   ]
