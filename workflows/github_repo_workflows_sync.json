@@ -284,7 +284,10 @@
         280
       ],
       "parameters": {
-        "options": {},
+        "options": {
+          "disableDotNotation": false,
+          "skipPairing": false
+        },
         "mergeByFields": {
           "values": [
             {
@@ -728,7 +731,13 @@
             "index": 0
           }
         ],
-        [],
+        [
+          {
+            "node": "Route by update time",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Route by update time",
