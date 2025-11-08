@@ -121,6 +121,20 @@
       "typeVersion": 1
     },
     {
+      "id": "c1d2e3f4-a5b6-7890-cdef-fedcba987654",
+      "name": "Clean n8n workflows",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "const results = [];\n\nfor (const item of $input.all()) {\n    // Deep copy using JSON\n    const workflow = JSON.parse(JSON.stringify(item.json));\n\n    // Remove auto-generated fields from n8n\n    const fieldsToRemove = [\n        'id', 'createdAt', 'updatedAt', 'versionId',\n        'meta', 'pinData', 'staticData', 'shared',\n        'isArchived', 'triggerCount'\n    ];\n\n    fieldsToRemove.forEach(field => {\n        delete workflow[field];\n    });\n\n    // Clean tags - keep only name\n    if (workflow.tags && Array.isArray(workflow.tags)) {\n        workflow.tags = workflow.tags.map(tag => {\n            if (typeof tag === 'object' && tag.name) {\n                return { name: tag.name };\n            }\n            return tag;\n        });\n    }\n\n    results.push({ json: workflow });\n}\n\nreturn results;"
+      },
+      "typeVersion": 2
+    },
+    {
       "id": "404e87cf-e561-4807-865a-26a6109c228f",
       "name": "Upload file",
       "type": "n8n-nodes-base.github",
@@ -586,6 +600,17 @@
   "versionId": "f8dfa54c-eb76-40f0-80d8-18cdab254091",
   "connections": {
     "n8n": {
+      "main": [
+        [
+          {
+            "node": "Clean n8n workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean n8n workflows": {
       "main": [
         [
           {
