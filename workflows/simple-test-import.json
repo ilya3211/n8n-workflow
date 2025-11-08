@@ -34,6 +34,12 @@
               "name": "sync_test",
               "value": "GitHub changed this at 01:30",
               "type": "string"
+            },
+            {
+              "id": "n8n-field-67890",
+              "name": "n8n_change",
+              "value": "n8n updated this at 01:45",
+              "type": "string"
             }
           ]
         },
@@ -68,5 +74,5 @@
       "name": "github4"
     }
   ],
-  "updatedAt": "2025-11-08T01:30:00.000Z"
+  "updatedAt": "2025-11-08T01:45:00.000Z"
 }
