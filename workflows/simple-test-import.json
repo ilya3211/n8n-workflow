@@ -1,5 +1,6 @@
 {
   "name": "Simple Test Import",
+  "active": false,
   "nodes": [
     {
       "parameters": {},
@@ -9,7 +10,7 @@
       "typeVersion": 1,
       "position": [
         240,
-        300
+        304
       ]
     },
     {
@@ -19,7 +20,7 @@
             {
               "id": "f1e2d3c4-b5a6-7890-cdef-123456789012",
               "name": "test_message",
-              "value": "Этот workflow был импортирован и обновлён из GitHub! ✨✅",
+              "value": "Этот workflow был импортирован и обновлён из GitHub!0 ✨✅",
               "type": "string"
             },
             {
@@ -43,8 +44,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        460,
-        300
+        464,
+        304
       ]
     }
   ],
@@ -61,11 +62,10 @@
       ]
     }
   },
-  "active": false,
   "settings": {},
   "tags": [
     {
-      "name": "github2"
+      "name": "github4"
     }
   ],
   "updatedAt": "2025-11-08T01:30:00.000Z"
