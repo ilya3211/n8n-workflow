@@ -1,0 +1,190 @@
+{
+  "name": "Google Gemini - NO PROXY (Test First)",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gemini-analysis",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        112
+      ],
+      "webhookId": "gemini-webhook-proxy",
+      "id": "b7a7ceb4-3607-49cc-ac22-f665df0ac992"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Extract Query",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        -448,
+        112
+      ],
+      "id": "7c876f62-ea27-4594-b180-5b1cf2784834"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "queryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyDKsO8w0MR2r_lfOSC8nwwTj73UY58GjHU"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"Задача: Проанализируй запрос: {{ $json.searchQuery }}\\n\\nТвоя цель — извлечь все ключевые факты, данные и утверждения, и представить их в виде структурированного отчета.\\n\\n## Общие требования:\\n\\n1. **Структура**: Организуй всю извлеченную информацию в четкие разделы с заголовками, используя Markdown для форматирования.\\n2. **Точность**: Передавай информацию максимально точно. Если в тексте есть неоднозначные моменты, укажи на это.\\n3. **Полнота**: Убедись, что не упущены важные детали. Если для прояснения фактов требуется дополнительная информация, используй веб-поиск и укажи источник.\\n4. **Источник**: Если статья предоставлена пользователем, начни свой ответ с указания на источник.\\n\\n## Структура отчета для вывода:\\n\\n### I. Цитаты и ключевые высказывания\\nВыдели все прямые цитаты (в кавычках) или значимые косвенные высказывания. Для каждой цитаты предоставь:\\n- **Текст цитаты**\\n- **Автор или источник**: (Имя, должность, название организации)\\n- **Контекст**: (В связи с чем было сделано это высказывание)\\n\\n### II. Законы и нормативные акты\\nПеречисли все упомянутые законы, постановления, ГОСТы, СП, СНиПы или другие нормативные документы:\\n- **Наименование и номер**\\n- **Дата**: (если указана)\\n- **Суть и роль в контексте**\\n- **Конкретные пункты/статьи**\\n\\n### III. Действия и события\\nОпиши конкретные действия, процедуры, события или решения:\\n- **Описание действия**\\n- **Инициатор/исполнитель**\\n- **Цель и мотивация**\\n- **Результат и последствия**\\n\\n### IV. Упоминания (Организации, лица, системы)\\nВыдели все значимые упоминания:\\n- **Организации**: роль и функции\\n- **Информационные системы**: назначение и значимость\\n- **Даты и сроки**: связанные события\\n- **Персоналии**: эксперты, чиновники\\n\\n### V. Прочие важные моменты\\n- **Анализ спорных ситуаций и судебной практики**\\n- **Советы и рекомендации экспертов**\\n- **Техническая информация и детали**\\n\\nОТВЕЧАЙ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.7,\n    \"topK\": 40,\n    \"topP\": 0.95,\n    \"maxOutputTokens\": 8192\n  },\n  \"safetySettings\": [\n    {\n      \"category\": \"HARM_CATEGORY_HARASSMENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_HATE_SPEECH\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    }\n  ]\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Gemini API Call with Proxy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -224,
+        112
+      ],
+      "id": "d07bcd8c-6671-4478-b79e-5fa36aa01b7c",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Format Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a0187001-01f5-4544-8c9d-d445f42821d1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "name": "Format Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        0,
+        208
+      ],
+      "id": "662d2620-4127-4f34-9f3d-888a0f9ff3b7"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        112
+      ],
+      "id": "540c337b-a6c5-4e83-9ddd-7656e4736d56"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Query": {
+      "main": [
+        [
+          {
+            "node": "Gemini API Call with Proxy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini API Call with Proxy": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "Gemini API Proxy"
+    }
+  ]
+}
