@@ -474,8 +474,7 @@
             }
           ]
         },
-        "mode": "manual",
-        "duplicateItem": false
+        "keepOnlySet": false
       },
       "typeVersion": 3.4
     },
