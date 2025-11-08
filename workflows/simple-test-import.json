@@ -1,5 +1,6 @@
 {
   "name": "Simple Test Import",
+  "active": false,
   "nodes": [
     {
       "parameters": {},
@@ -55,11 +56,10 @@
       ]
     }
   },
-  "active": false,
   "settings": {},
   "tags": [
     {
-      "name": "github2"
+      "name": "github4"
     }
   ]
 }
