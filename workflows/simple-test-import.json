@@ -25,7 +25,13 @@
             {
               "id": "a9b8c7d6-e5f4-3210-fedc-ba9876543210",
               "name": "import_date",
-              "value": "2025-11-07",
+              "value": "2025-11-08",
+              "type": "string"
+            },
+            {
+              "id": "test-field-12345",
+              "name": "sync_test",
+              "value": "GitHub changed this at 01:30",
               "type": "string"
             }
           ]
@@ -61,5 +67,6 @@
     {
       "name": "github2"
     }
-  ]
+  ],
+  "updatedAt": "2025-11-08T01:30:00.000Z"
 }
