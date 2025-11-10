@@ -67,6 +67,125 @@
     },
     {
       "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appr4mKS7mC5XIcNU",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblhG32YmFpF9rrb8",
+          "mode": "id"
+        },
+        "filterByFormula": "={{ \"LOWER({Query}) = '\" & $json.searchQuery.toLowerCase() & \"'\" }}",
+        "options": {
+          "maxRecords": 1
+        }
+      },
+      "name": "Search in Airtable Cache",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        840,
+        300
+      ],
+      "id": "search-airtable-node",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "airtablePersonalAccessToken",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cache_found",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check if Cached",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        300
+      ],
+      "id": "check-cache-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "analysis",
+              "name": "analysis",
+              "value": "={{ $json.fields.Response }}",
+              "type": "string"
+            },
+            {
+              "id": "original_query",
+              "name": "original_query",
+              "value": "={{ $json.fields.Query }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "cached",
+              "name": "cached",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "record_id",
+              "name": "record_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Cached Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        1280,
+        200
+      ],
+      "id": "format-cached-node"
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
         "authentication": "genericCredentialType",
@@ -82,7 +201,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"Проанализируй следующий запрос и представь детальный структурированный анализ:\\n\\nТребования к установке счетчиков воды в многоквартирных домах. Процедура поверки приборов учета. Права собственника и обязанности РСО.\\n\\n---\\n\\nТребования к анализу:\\n\\n## Структура отчета:\\n\\n### I. Цитаты и ключевые высказывания\\nВыдели все прямые цитаты или значимые высказывания:\\n- Текст цитаты\\n- Автор или источник (имя, должность, организация)\\n- Контекст высказывания\\n\\n### II. Законы и нормативные акты\\nПеречисли все упомянутые нормативные документы:\\n- Наименование и номер\\n- Дата (если указана)\\n- Суть и роль в контексте\\n- Конкретные пункты/статьи\\n\\n### III. Действия и события\\nОпиши действия, процедуры, события:\\n- Описание действия\\n- Инициатор/исполнитель\\n- Цель и мотивация\\n- Результат и последствия\\n\\n### IV. Упоминания\\nВыдели значимые упоминания:\\n- Организации: роль и функции\\n- Информационные системы\\n- Даты и сроки\\n- Персоналии\\n\\n### V. Прочие важные моменты\\n- Анализ спорных ситуаций\\n- Советы и рекомендации\\n- Техническая информация\\n\\nОТВЕЧАЙ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.7,\n    \"topK\": 40,\n    \"topP\": 0.95,\n    \"maxOutputTokens\": 8192\n  },\n  \"safetySettings\": [\n    {\n      \"category\": \"HARM_CATEGORY_HARASSMENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_HATE_SPEECH\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"Проанализируй следующий запрос и представь детальный структурированный анализ:\\n\\n{{ $('Extract Query').item.json.searchQuery }}\\n\\n---\\n\\nТребования к анализу:\\n\\n## Структура отчета:\\n\\n### I. Цитаты и ключевые высказывания\\nВыдели все прямые цитаты или значимые высказывания:\\n- Текст цитаты\\n- Автор или источник (имя, должность, организация)\\n- Контекст высказывания\\n\\n### II. Законы и нормативные акты\\nПеречисли все упомянутые нормативные документы:\\n- Наименование и номер\\n- Дата (если указана)\\n- Суть и роль в контексте\\n- Конкретные пункты/статьи\\n\\n### III. Действия и события\\nОпиши действия, процедуры, события:\\n- Описание действия\\n- Инициатор/исполнитель\\n- Цель и мотивация\\n- Результат и последствия\\n\\n### IV. Упоминания\\nВыдели значимые упоминания:\\n- Организации: роль и функции\\n- Информационные системы\\n- Даты и сроки\\n- Персоналии\\n\\n### V. Прочие важные моменты\\n- Анализ спорных ситуаций\\n- Советы и рекомендации\\n- Техническая информация\\n\\nОТВЕЧАЙ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.7,\n    \"topK\": 40,\n    \"topP\": 0.95,\n    \"maxOutputTokens\": 8192\n  },\n  \"safetySettings\": [\n    {\n      \"category\": \"HARM_CATEGORY_HARASSMENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_HATE_SPEECH\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    }\n  ]\n}",
         "options": {
           "timeout": 60000
         }
@@ -91,11 +210,48 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        840,
-        300
+        1280,
+        400
       ],
       "id": "gemini-api-node",
       "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appr4mKS7mC5XIcNU",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblhG32YmFpF9rrb8",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Query": "={{ $('Extract Query').item.json.searchQuery }}",
+            "Response": "={{ $json.candidates[0].content.parts[0].text }}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Save to Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        400
+      ],
+      "id": "save-airtable-node",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "airtablePersonalAccessToken",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
     },
     {
       "parameters": {
@@ -110,7 +266,7 @@
             {
               "id": "analysis",
               "name": "analysis",
-              "value": "={{ $json.candidates[0].content.parts[0].text }}",
+              "value": "={{ $('Gemini API Call with Proxy').item.json.candidates[0].content.parts[0].text }}",
               "type": "string"
             },
             {
@@ -134,13 +290,19 @@
             {
               "id": "tokens_used",
               "name": "tokens_used",
-              "value": "={{ $json.usageMetadata ? $json.usageMetadata.totalTokenCount : 0 }}",
+              "value": "={{ $('Gemini API Call with Proxy').item.json.usageMetadata ? $('Gemini API Call with Proxy').item.json.usageMetadata.totalTokenCount : 0 }}",
               "type": "number"
             },
             {
-              "id": "proxy_used",
-              "name": "proxy_used",
-              "value": "91.216.186.152:8000",
+              "id": "cached",
+              "name": "cached",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "record_id",
+              "name": "record_id",
+              "value": "={{ $json.id }}",
               "type": "string"
             }
           ]
@@ -151,8 +313,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
       "position": [
-        1060,
-        200
+        1720,
+        400
       ],
       "id": "format-success-node"
     },
@@ -185,9 +347,9 @@
               "type": "string"
             },
             {
-              "id": "proxy_used",
-              "name": "proxy_used",
-              "value": "91.216.186.152:8000",
+              "id": "original_query",
+              "name": "original_query",
+              "value": "={{ $('Extract Query').item.json.searchQuery }}",
               "type": "string"
             }
           ]
@@ -198,8 +360,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
       "position": [
-        1060,
-        400
+        1500,
+        600
       ],
       "id": "format-error-node"
     },
@@ -222,7 +384,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        1280,
+        1940,
         300
       ],
       "id": "respond-webhook-node"
@@ -240,11 +402,62 @@
         ]
       ]
     },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Extract Query": {
       "main": [
         [
           {
+            "node": "Search in Airtable Cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search in Airtable Cache": {
+      "main": [
+        [
+          {
+            "node": "Check if Cached",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Cached": {
+      "main": [
+        [
+          {
+            "node": "Format Cached Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
             "node": "Gemini API Call with Proxy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Cached Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
             "type": "main",
             "index": 0
           }
@@ -255,7 +468,7 @@
       "main": [
         [
           {
-            "node": "Format Success Response",
+            "node": "Save to Airtable",
             "type": "main",
             "index": 0
           }
@@ -263,6 +476,17 @@
         [
           {
             "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Airtable": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
             "type": "main",
             "index": 0
           }
@@ -285,17 +509,6 @@
         [
           {
             "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Manual Trigger": {
-      "main": [
-        [
-          {
-            "node": "Extract Query",
             "type": "main",
             "index": 0
           }
