@@ -1,45 +1,74 @@
 {
-  "createdAt": "2025-11-08T16:04:29.796Z",
-  "updatedAt": "2025-11-08T16:04:29.796Z",
-  "id": "blESlHavnvqzNZRS",
-  "name": "Google Gemini - NO PROXY (Test First)",
-  "active": false,
-  "isArchived": false,
+  "name": "Google Gemini - Production Ready",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "gemini-analysis",
         "responseMode": "responseNode",
-        "options": {}
+        "options": {
+          "rawBody": false
+        },
+        "responseData": "allEntries"
       },
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -656,
-        112
+        400,
+        300
       ],
       "webhookId": "gemini-webhook-proxy",
-      "id": "b7a7ceb4-3607-49cc-ac22-f665df0ac992"
+      "id": "webhook-node"
     },
     {
       "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "query",
+              "value": "Требования к установке счетчиков воды в многоквартирных домах. Процедура поверки приборов учета. Права собственника и обязанности РСО."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        400,
+        450
+      ],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "search_query",
+              "name": "searchQuery",
+              "value": "={{ $json.query || \"Требования к установке счетчиков воды в многоквартирных домах. Процедура поверки приборов учета. Права собственника и обязанности РСО.\" }}",
+              "type": "string"
+            }
+          ]
+        },
         "options": {}
       },
       "name": "Extract Query",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
       "position": [
-        -448,
-        112
+        620,
+        300
       ],
-      "id": "7c876f62-ea27-4594-b180-5b1cf2784834"
+      "id": "extract-query-node"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
         "authentication": "genericCredentialType",
         "genericAuthType": "queryAuth",
         "sendQuery": true,
@@ -53,7 +82,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"Задача: Проанализируй запрос: {{ $json.searchQuery }}\\n\\nТвоя цель — извлечь все ключевые факты, данные и утверждения, и представить их в виде структурированного отчета.\\n\\n## Общие требования:\\n\\n1. **Структура**: Организуй всю извлеченную информацию в четкие разделы с заголовками, используя Markdown для форматирования.\\n2. **Точность**: Передавай информацию максимально точно. Если в тексте есть неоднозначные моменты, укажи на это.\\n3. **Полнота**: Убедись, что не упущены важные детали. Если для прояснения фактов требуется дополнительная информация, используй веб-поиск и укажи источник.\\n4. **Источник**: Если статья предоставлена пользователем, начни свой ответ с указания на источник.\\n\\n## Структура отчета для вывода:\\n\\n### I. Цитаты и ключевые высказывания\\nВыдели все прямые цитаты (в кавычках) или значимые косвенные высказывания. Для каждой цитаты предоставь:\\n- **Текст цитаты**\\n- **Автор или источник**: (Имя, должность, название организации)\\n- **Контекст**: (В связи с чем было сделано это высказывание)\\n\\n### II. Законы и нормативные акты\\nПеречисли все упомянутые законы, постановления, ГОСТы, СП, СНиПы или другие нормативные документы:\\n- **Наименование и номер**\\n- **Дата**: (если указана)\\n- **Суть и роль в контексте**\\n- **Конкретные пункты/статьи**\\n\\n### III. Действия и события\\nОпиши конкретные действия, процедуры, события или решения:\\n- **Описание действия**\\n- **Инициатор/исполнитель**\\n- **Цель и мотивация**\\n- **Результат и последствия**\\n\\n### IV. Упоминания (Организации, лица, системы)\\nВыдели все значимые упоминания:\\n- **Организации**: роль и функции\\n- **Информационные системы**: назначение и значимость\\n- **Даты и сроки**: связанные события\\n- **Персоналии**: эксперты, чиновники\\n\\n### V. Прочие важные моменты\\n- **Анализ спорных ситуаций и судебной практики**\\n- **Советы и рекомендации экспертов**\\n- **Техническая информация и детали**\\n\\nОТВЕЧАЙ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.7,\n    \"topK\": 40,\n    \"topP\": 0.95,\n    \"maxOutputTokens\": 8192\n  },\n  \"safetySettings\": [\n    {\n      \"category\": \"HARM_CATEGORY_HARASSMENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_HATE_SPEECH\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"Проанализируй следующий запрос и представь детальный структурированный анализ:\\n\\nТребования к установке счетчиков воды в многоквартирных домах. Процедура поверки приборов учета. Права собственника и обязанности РСО.\\n\\n---\\n\\nТребования к анализу:\\n\\n## Структура отчета:\\n\\n### I. Цитаты и ключевые высказывания\\nВыдели все прямые цитаты или значимые высказывания:\\n- Текст цитаты\\n- Автор или источник (имя, должность, организация)\\n- Контекст высказывания\\n\\n### II. Законы и нормативные акты\\nПеречисли все упомянутые нормативные документы:\\n- Наименование и номер\\n- Дата (если указана)\\n- Суть и роль в контексте\\n- Конкретные пункты/статьи\\n\\n### III. Действия и события\\nОпиши действия, процедуры, события:\\n- Описание действия\\n- Инициатор/исполнитель\\n- Цель и мотивация\\n- Результат и последствия\\n\\n### IV. Упоминания\\nВыдели значимые упоминания:\\n- Организации: роль и функции\\n- Информационные системы\\n- Даты и сроки\\n- Персоналии\\n\\n### V. Прочие важные моменты\\n- Анализ спорных ситуаций\\n- Советы и рекомендации\\n- Техническая информация\\n\\nОТВЕЧАЙ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ.\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.7,\n    \"topK\": 40,\n    \"topP\": 0.95,\n    \"maxOutputTokens\": 8192\n  },\n  \"safetySettings\": [\n    {\n      \"category\": \"HARM_CATEGORY_HARASSMENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_HATE_SPEECH\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    }\n  ]\n}",
         "options": {
           "timeout": 60000
         }
@@ -62,37 +91,117 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        -224,
-        112
+        840,
+        300
       ],
-      "id": "d07bcd8c-6671-4478-b79e-5fa36aa01b7c",
+      "id": "gemini-api-node",
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "analysis",
+              "name": "analysis",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "original_query",
+              "name": "original_query",
+              "value": "={{ $('Extract Query').item.json.searchQuery }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "model_used",
+              "name": "model",
+              "value": "gemini-2.5-pro",
+              "type": "string"
+            },
+            {
+              "id": "tokens_used",
+              "name": "tokens_used",
+              "value": "={{ $json.usageMetadata ? $json.usageMetadata.totalTokenCount : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "proxy_used",
+              "name": "proxy_used",
+              "value": "91.216.186.152:8000",
+              "type": "string"
+            }
+          ]
+        },
         "options": {}
       },
       "name": "Format Success Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
       "position": [
-        0,
-        0
+        1060,
+        200
       ],
-      "id": "a0187001-01f5-4544-8c9d-d445f42821d1"
+      "id": "format-success-node"
     },
     {
       "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error ? $json.error.message : 'Unknown error' }}",
+              "type": "string"
+            },
+            {
+              "id": "error_details",
+              "name": "error_details",
+              "value": "={{ $json.error }}",
+              "type": "object"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "proxy_used",
+              "name": "proxy_used",
+              "value": "91.216.186.152:8000",
+              "type": "string"
+            }
+          ]
+        },
         "options": {}
       },
       "name": "Format Error Response",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
       "position": [
-        0,
-        208
+        1060,
+        400
       ],
-      "id": "662d2620-4127-4f34-9f3d-888a0f9ff3b7"
+      "id": "format-error-node"
     },
     {
       "parameters": {
@@ -113,10 +222,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        224,
-        112
+        1280,
+        300
       ],
-      "id": "540c337b-a6c5-4e83-9ddd-7656e4736d56"
+      "id": "respond-webhook-node"
     }
   ],
   "connections": {
@@ -181,31 +290,36 @@
           }
         ]
       ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
+  "pinData": {},
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
   },
   "staticData": null,
-  "meta": null,
-  "pinData": {},
-  "versionId": "079e88dc-74c4-44f9-8f78-c91531f1c309",
-  "triggerCount": 0,
-  "shared": [
-    {
-      "createdAt": "2025-11-08T16:04:29.796Z",
-      "updatedAt": "2025-11-08T16:04:29.796Z",
-      "role": "workflow:owner",
-      "workflowId": "blESlHavnvqzNZRS",
-      "projectId": "XaQYNu2ASfYERted"
-    }
-  ],
   "tags": [
     {
-      "createdAt": "2025-11-08T16:04:28.560Z",
-      "updatedAt": "2025-11-08T16:04:28.560Z",
-      "id": "74Tuq0920RyLXkUw",
+      "createdAt": "2025-11-08T00:00:00.000Z",
+      "updatedAt": "2025-11-08T00:00:00.000Z",
+      "id": "gemini-api-proxy",
       "name": "Gemini API Proxy"
     }
-  ]
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-08T00:00:00.000Z",
+  "versionId": "1"
 }
