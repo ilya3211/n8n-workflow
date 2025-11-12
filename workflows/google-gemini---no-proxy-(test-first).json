@@ -438,7 +438,7 @@
             },
             {
               "id": "final_plan",
-              "name": "Article Plan",
+              "name": "article_plan",
               "value": "={{ $json.plan_to_save }}",
               "type": "string"
             }
@@ -472,7 +472,7 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Article Plan": "={{ $json['Article Plan'] }}"
+            "Article Plan": "={{ $json.article_plan }}"
           }
         },
         "options": {}
