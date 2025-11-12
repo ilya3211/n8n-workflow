@@ -106,38 +106,16 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "airtable_data",
-              "name": "airtableData",
-              "value": "={{ $json }}",
-              "type": "object"
-            },
-            {
-              "id": "search_query_original",
-              "name": "originalSearchQuery",
-              "value": "={{ $node[\"Extract Query\"].json.searchQuery }}",
-              "type": "string"
-            },
-            {
-              "id": "search_query_lower_normalized",
-              "name": "searchQueryLowerNormalized",
-              "value": "={{ $node[\"Extract Query\"].json.searchQueryLower }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
+        "maxItems": 1
       },
-      "name": "Merge Search Context",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.2,
+      "name": "Limit to First Result",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
       "position": [
         920,
         300
       ],
-      "id": "merge-context-node"
+      "id": "limit-node"
     },
     {
       "parameters": {
@@ -145,12 +123,12 @@
           "options": {
             "caseSensitive": false,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "loose"
           },
           "conditions": [
             {
               "id": "cache_found",
-              "leftValue": "={{ $json.airtableData && $json.airtableData.id ? $json.airtableData.id : '' }}",
+              "leftValue": "={{ $json.id }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -160,8 +138,8 @@
             },
             {
               "id": "query_matches",
-              "leftValue": "={{ $json.airtableData && $json.airtableData.fields && $json.airtableData.fields.Query ? $json.airtableData.fields.Query.toLowerCase().trim() : '' }}",
-              "rightValue": "={{ $json.searchQueryLowerNormalized }}",
+              "leftValue": "={{ $json.fields && $json.fields.Query ? $json.fields.Query.toLowerCase().trim() : '' }}",
+              "rightValue": "={{ $('Extract Query').first().json.searchQueryLower }}",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -176,7 +154,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1140,
+        1060,
         300
       ],
       "id": "check-cache-node"
@@ -194,13 +172,13 @@
             {
               "id": "analysis",
               "name": "analysis",
-              "value": "={{ $json.airtableData.fields.Response }}",
+              "value": "={{ $json.fields.Response }}",
               "type": "string"
             },
             {
               "id": "original_query",
               "name": "original_query",
-              "value": "={{ $json.originalSearchQuery }}",
+              "value": "={{ $('Extract Query').first().json.searchQuery }}",
               "type": "string"
             },
             {
@@ -218,7 +196,7 @@
             {
               "id": "record_id",
               "name": "record_id",
-              "value": "={{ $json.airtableData.id }}",
+              "value": "={{ $json.id }}",
               "type": "string"
             }
           ]
@@ -478,14 +456,14 @@
       "main": [
         [
           {
-            "node": "Merge Search Context",
+            "node": "Limit to First Result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Merge Search Context": {
+    "Limit to First Result": {
       "main": [
         [
           {
