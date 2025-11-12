@@ -44,18 +44,20 @@
     },
     {
       "parameters": {
+        "mode": "manual",
+        "duplicateItem": false,
         "assignments": {
           "assignments": [
             {
               "id": "search_query",
               "name": "searchQuery",
-              "value": "={{ $json.query || \"Требования к установке счетчиков воды в многоквартирных домах. Процедура поверки приборов учета. Права собственника и обязанности РСО.\" }}",
+              "value": "={{ $json.body?.query || $json.query || \"Требования к установке счетчиков воды в многоквартирных домах. Процедура поверки приборов учета. Права собственника и обязанности РСО.\" }}",
               "type": "string"
             },
             {
               "id": "search_query_lower",
               "name": "searchQueryLower",
-              "value": "={{ ($json.query || \"Требования к установке счетчиков воды в многоквартирных домах. Процедура поверки приборов учета. Права собственника и обязанности РСО.\").toLowerCase().trim() }}",
+              "value": "={{ ($json.body?.query || $json.query || \"Требования к установке счетчиков воды в многоквартирных домах. Процедура поверки приборов учета. Права собственника и обязанности РСО.\").toLowerCase().trim() }}",
               "type": "string"
             }
           ]
@@ -64,7 +66,7 @@
       },
       "name": "Extract Query",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3.2,
+      "typeVersion": 3.4,
       "position": [
         620,
         300
