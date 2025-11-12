@@ -251,7 +251,7 @@
           "maxRedirects": 5,
           "retry": {
             "maxTries": 4,
-            "waitBetween": 15000
+            "waitBetween": 30000
           }
         }
       },
@@ -354,7 +354,7 @@
           "maxRedirects": 5,
           "retry": {
             "maxTries": 4,
-            "waitBetween": 15000
+            "waitBetween": 30000
           }
         }
       },
