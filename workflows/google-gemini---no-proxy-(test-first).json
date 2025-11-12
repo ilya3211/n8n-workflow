@@ -321,7 +321,7 @@
           "value": "tblhG32YmFpF9rrb8",
           "mode": "id"
         },
-        "id": "={{ $('Save to Airtable').item.json.id }}",
+        "id": "={{ $('Save to Airtable').first().json.id }}",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -358,7 +358,7 @@
             {
               "id": "analysis",
               "name": "analysis",
-              "value": "={{ $('Gemini API Call with Proxy').item.json.candidates[0].content.parts[0].text }}",
+              "value": "={{ $('Gemini API Call with Proxy').first().json.candidates[0].content.parts[0].text }}",
               "type": "string"
             },
             {
@@ -382,7 +382,7 @@
             {
               "id": "tokens_used",
               "name": "tokens_used",
-              "value": "={{ $('Gemini API Call with Proxy').item.json.usageMetadata ? $('Gemini API Call with Proxy').item.json.usageMetadata.totalTokenCount : 0 }}",
+              "value": "={{ $('Gemini API Call with Proxy').first().json.usageMetadata ? $('Gemini API Call with Proxy').first().json.usageMetadata.totalTokenCount : 0 }}",
               "type": "number"
             },
             {
@@ -394,19 +394,19 @@
             {
               "id": "record_id",
               "name": "record_id",
-              "value": "={{ $json.id || $('Save to Airtable').item.json.id }}",
+              "value": "={{ $json.id || $('Save to Airtable').first().json.id }}",
               "type": "string"
             },
             {
               "id": "article_plan",
               "name": "article_plan",
-              "value": "={{ $('Gemini Plan Article').item.json.candidates?.[0]?.content?.parts?.[0]?.text || $('Gemini Plan Article').item.json.error?.message || 'Plan generation failed' }}",
+              "value": "={{ $('Gemini Plan Article').first().json.candidates?.[0]?.content?.parts?.[0]?.text || $('Gemini Plan Article').first().json.error?.message || 'Plan generation failed' }}",
               "type": "string"
             },
             {
               "id": "plan_tokens_used",
               "name": "plan_tokens_used",
-              "value": "={{ $('Gemini Plan Article').item.json.usageMetadata?.totalTokenCount || 0 }}",
+              "value": "={{ $('Gemini Plan Article').first().json.usageMetadata?.totalTokenCount || 0 }}",
               "type": "number"
             }
           ]
