@@ -428,6 +428,35 @@
     },
     {
       "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "final_id",
+              "name": "id",
+              "value": "={{ $json.record_id_to_update }}",
+              "type": "string"
+            },
+            {
+              "id": "final_plan",
+              "name": "Article Plan",
+              "value": "={{ $json.plan_to_save }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Airtable ID",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2150,
+        400
+      ],
+      "id": "set-airtable-id-node"
+    },
+    {
+      "parameters": {
         "operation": "update",
         "base": {
           "__rl": true,
@@ -439,11 +468,11 @@
           "value": "tblhG32YmFpF9rrb8",
           "mode": "id"
         },
-        "id": "={{ $json.record_id_to_update }}",
+        "id": "={{ $json.id }}",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Article Plan": "={{ $json.plan_to_save }}"
+            "Article Plan": "={{ $json['Article Plan'] }}"
           }
         },
         "options": {}
@@ -811,6 +840,17 @@
       ]
     },
     "Debug Before Save": {
+      "main": [
+        [
+          {
+            "node": "Set Airtable ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Airtable ID": {
       "main": [
         [
           {
