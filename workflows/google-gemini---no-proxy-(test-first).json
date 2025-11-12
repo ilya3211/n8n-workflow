@@ -318,6 +318,35 @@
     },
     {
       "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "airtable_record_id",
+              "name": "airtable_record_id",
+              "value": "={{ $('Save to Airtable').first().json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "plan_text",
+              "name": "plan_text",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Prepare Plan Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1830,
+        400
+      ],
+      "id": "prepare-plan-data-node"
+    },
+    {
+      "parameters": {
         "operation": "update",
         "base": {
           "__rl": true,
@@ -329,11 +358,11 @@
           "value": "tblhG32YmFpF9rrb8",
           "mode": "id"
         },
-        "id": "={{ $('Save to Airtable').first().json.id }}",
+        "id": "={{ $json.airtable_record_id }}",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Article Plan": "={{ $json.candidates[0].content.parts[0].text }}"
+            "Article Plan": "={{ $json.plan_text }}"
           }
         },
         "options": {}
@@ -620,7 +649,7 @@
       "main": [
         [
           {
-            "node": "Save Plan to Airtable",
+            "node": "Prepare Plan Data",
             "type": "main",
             "index": 0
           }
@@ -661,6 +690,17 @@
         [
           {
             "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Plan Data": {
+      "main": [
+        [
+          {
+            "node": "Save Plan to Airtable",
             "type": "main",
             "index": 0
           }
