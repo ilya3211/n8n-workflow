@@ -107,6 +107,20 @@
     },
     {
       "parameters": {
+        "maxItems": 1,
+        "keepMissing": true
+      },
+      "name": "Limit to First Result",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        920,
+        300
+      ],
+      "id": "limit-node"
+    },
+    {
+      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": false,
@@ -122,15 +136,6 @@
                 "type": "string",
                 "operation": "exists",
                 "singleValue": true
-              }
-            },
-            {
-              "id": "query_matches",
-              "leftValue": "={{ $json.fields && $json.fields.Query ? $json.fields.Query.toLowerCase().trim() : '' }}",
-              "rightValue": "={{ $('Extract Query').first().json.searchQueryLower }}",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
               }
             }
           ],
@@ -441,6 +446,17 @@
       ]
     },
     "Search in Airtable Cache": {
+      "main": [
+        [
+          {
+            "node": "Limit to First Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit to First Result": {
       "main": [
         [
           {
