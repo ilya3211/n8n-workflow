@@ -84,7 +84,7 @@
           "value": "tblhG32YmFpF9rrb8",
           "mode": "id"
         },
-        "filterByFormula": "={{ 'LOWER({Query}) = LOWER(\"' & $json.searchQuery & '\")' }}",
+        "filterByFormula": "={{ '{Query}=\"' + $json.searchQuery + '\"' }}",
         "options": {
           "maxRecords": 1
         }
