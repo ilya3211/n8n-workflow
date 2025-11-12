@@ -394,19 +394,19 @@
             {
               "id": "record_id",
               "name": "record_id",
-              "value": "={{ $json.id }}",
+              "value": "={{ $json.id || $('Save to Airtable').item.json.id }}",
               "type": "string"
             },
             {
               "id": "article_plan",
               "name": "article_plan",
-              "value": "={{ $('Gemini Plan Article').item.json.candidates[0].content.parts[0].text }}",
+              "value": "={{ $('Gemini Plan Article').item.json.candidates?.[0]?.content?.parts?.[0]?.text || $('Gemini Plan Article').item.json.error?.message || 'Plan generation failed' }}",
               "type": "string"
             },
             {
               "id": "plan_tokens_used",
               "name": "plan_tokens_used",
-              "value": "={{ $('Gemini Plan Article').item.json.usageMetadata ? $('Gemini Plan Article').item.json.usageMetadata.totalTokenCount : 0 }}",
+              "value": "={{ $('Gemini Plan Article').item.json.usageMetadata?.totalTokenCount || 0 }}",
               "type": "number"
             }
           ]
@@ -613,6 +613,13 @@
         [
           {
             "node": "Save Plan to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Success Response",
             "type": "main",
             "index": 0
           }
