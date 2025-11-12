@@ -276,6 +276,75 @@
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "queryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyDKsO8w0MR2r_lfOSC8nwwTj73UY58GjHU"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\n    \"parts\": [{\n      \"text\": \"Задача: Создать гибридную структуру (план) для написания экспертной статьи на тему: {{ $('Extract Query').item.json.searchQuery }}\\n\\nТвоя цель — выступить в роли редактора-аналитика. Проанализируй поисковую выдачу и существующие материалы по теме, чтобы спроектировать структуру идеальной статьи. Эта статья должна быть более полной, полезной и структурированной, чем существующие конкуренты.\\n\\nТребования к результату:\\n\\nПредставь итоговый план в виде четкой, структурированной таблицы. Эта таблица будет служить техническим заданием для автора.\\n\\nШаг 1: Глубинный анализ темы\\nСначала проведи невидимый для пользователя анализ: изучи топ-10 статей по запросу, выдели основные подтемы, найди белые пятна (что упускают конкуренты), определи основные вопросы и проблемы пользователей.\\n\\nШаг 2: Формирование гибридной структуры (плана статьи)\\nНа основе анализа из Шага 1, представь результат в виде следующей таблицы:\\n\\nОбязательный заголовок (H2/H3) | Интент (какой вопрос пользователя закрывает раздел) | Рекомендуемый объем (символов) | Ключевые элементы и фишки для включения в раздел\\n\\nДля каждого раздела указывай:\\n- Совет: [Практическая рекомендация для читателя]\\n- Авторский материал: [Идея для уникального контента, например, пошаговый алгоритм, чек-лист, разбор кейса]\\n- Уникальная фишка: [Неочевидный факт, лайфхак или акцент, который выделит статью на фоне других]\\n- Важный элемент: [Критически важная информация, которую нельзя упустить]\\n\\nШаг 3: Общие рекомендации для автора\\nПосле таблицы предоставь краткий список общих советов для написания статьи:\\n- Стиль и тон\\n- Визуальное оформление\\n- Ключевые источники\\n\\nОТВЕЧАЙ ТОЛЬКО НА РУССКОМ ЯЗЫКЕ. Создай максимально детальный и практичный план.\"\n    }]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.8,\n    \"topK\": 40,\n    \"topP\": 0.95,\n    \"maxOutputTokens\": 8192\n  },\n  \"safetySettings\": [\n    {\n      \"category\": \"HARM_CATEGORY_HARASSMENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_HATE_SPEECH\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_SEXUALLY_EXPLICIT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    },\n    {\n      \"category\": \"HARM_CATEGORY_DANGEROUS_CONTENT\",\n      \"threshold\": \"BLOCK_MEDIUM_AND_ABOVE\"\n    }\n  ]\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Gemini Plan Article",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1720,
+        400
+      ],
+      "id": "gemini-plan-node",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appr4mKS7mC5XIcNU",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblhG32YmFpF9rrb8",
+          "mode": "id"
+        },
+        "id": "={{ $('Save to Airtable').item.json.id }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Article Plan": "={{ $json.candidates[0].content.parts[0].text }}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Save Plan to Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        1940,
+        400
+      ],
+      "id": "save-plan-node",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "airtablePersonalAccessToken",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
         "assignments": {
           "assignments": [
             {
@@ -325,6 +394,18 @@
               "name": "record_id",
               "value": "={{ $json.id }}",
               "type": "string"
+            },
+            {
+              "id": "article_plan",
+              "name": "article_plan",
+              "value": "={{ $('Gemini Plan Article').item.json.candidates[0].content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "plan_tokens_used",
+              "name": "plan_tokens_used",
+              "value": "={{ $('Gemini Plan Article').item.json.usageMetadata ? $('Gemini Plan Article').item.json.usageMetadata.totalTokenCount : 0 }}",
+              "type": "number"
             }
           ]
         },
@@ -334,7 +415,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.2,
       "position": [
-        1720,
+        2160,
         400
       ],
       "id": "format-success-node"
@@ -405,7 +486,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        1940,
+        2380,
         300
       ],
       "id": "respond-webhook-node"
@@ -515,6 +596,28 @@
       ]
     },
     "Save to Airtable": {
+      "main": [
+        [
+          {
+            "node": "Gemini Plan Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Plan Article": {
+      "main": [
+        [
+          {
+            "node": "Save Plan to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Plan to Airtable": {
       "main": [
         [
           {
