@@ -473,7 +473,8 @@
           "mappingMode": "defineBelow",
           "value": {
             "Article Plan": "={{ $json.article_plan }}"
-          }
+          },
+          "matchingColumns": []
         },
         "options": {}
       },
