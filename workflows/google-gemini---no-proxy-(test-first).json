@@ -399,6 +399,35 @@
     },
     {
       "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "debug_record_id",
+              "name": "record_id_to_update",
+              "value": "={{ $json.airtable_record_id }}",
+              "type": "string"
+            },
+            {
+              "id": "debug_plan",
+              "name": "plan_to_save",
+              "value": "={{ $json.plan_text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Debug Before Save",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2050,
+        400
+      ],
+      "id": "debug-before-save-node"
+    },
+    {
+      "parameters": {
         "operation": "update",
         "base": {
           "__rl": true,
@@ -410,11 +439,11 @@
           "value": "tblhG32YmFpF9rrb8",
           "mode": "id"
         },
-        "id": "={{ $json.airtable_record_id }}",
+        "id": "={{ $json.record_id_to_update }}",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Article Plan": "={{ $json.plan_text }}"
+            "Article Plan": "={{ $json.plan_to_save }}"
           }
         },
         "options": {}
@@ -752,7 +781,7 @@
       "main": [
         [
           {
-            "node": "Save Plan to Airtable",
+            "node": "Debug Before Save",
             "type": "main",
             "index": 0
           }
@@ -775,6 +804,17 @@
         [
           {
             "node": "Gemini API Call with Proxy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Debug Before Save": {
+      "main": [
+        [
+          {
+            "node": "Save Plan to Airtable",
             "type": "main",
             "index": 0
           }
