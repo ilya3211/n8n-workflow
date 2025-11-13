@@ -249,6 +249,7 @@
         "options": {
           "timeout": 120000,
           "maxRedirects": 5,
+          "proxy": "",
           "retry": {
             "maxTries": 4,
             "waitBetween": 30000,
@@ -353,6 +354,7 @@
         "options": {
           "timeout": 120000,
           "maxRedirects": 5,
+          "proxy": "",
           "retry": {
             "maxTries": 4,
             "waitBetween": 30000,
