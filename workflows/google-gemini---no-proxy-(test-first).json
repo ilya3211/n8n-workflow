@@ -470,7 +470,7 @@
           "value": "tblhG32YmFpF9rrb8",
           "mode": "id"
         },
-        "id": "recl8iUdTcWetNKFE",
+        "id": "={{ $json.id }}",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
