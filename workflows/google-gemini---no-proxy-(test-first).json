@@ -249,7 +249,7 @@
         "options": {
           "timeout": 120000,
           "maxRedirects": 5,
-          "proxy": "",
+          "proxy": "socks5://8Y0ETV:2TpT6c@91.216.186.152:8000",
           "retry": {
             "maxTries": 4,
             "waitBetween": 30000,
@@ -354,7 +354,7 @@
         "options": {
           "timeout": 120000,
           "maxRedirects": 5,
-          "proxy": "",
+          "proxy": "socks5://8Y0ETV:2TpT6c@91.216.186.152:8000",
           "retry": {
             "maxTries": 4,
             "waitBetween": 30000,
