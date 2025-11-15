@@ -1,0 +1,305 @@
+{
+  "name": "Claude.AI Puppeteer Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "claude-automation",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        },
+        "responseData": "allEntries"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [300, 300],
+      "webhookId": "claude-automation-webhook",
+      "id": "webhook-node"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "prompt",
+              "value": "Привет! Как дела?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [300, 450],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user_prompt",
+              "name": "userPrompt",
+              "value": "={{ $json.body?.prompt || $json.prompt || \"Привет! Как дела?\" }}",
+              "type": "string"
+            },
+            {
+              "id": "session_key",
+              "name": "sessionKey",
+              "value": "={{ $json.body?.sessionKey || $json.sessionKey || \"YOUR_SESSION_KEY_HERE\" }}",
+              "type": "string"
+            },
+            {
+              "id": "cf_bm_cookie",
+              "name": "cfBmCookie",
+              "value": "={{ $json.body?.cfBmCookie || $json.cfBmCookie || \"YOUR_CF_BM_COOKIE_HERE\" }}",
+              "type": "string"
+            },
+            {
+              "id": "timeout",
+              "name": "timeout",
+              "value": "={{ $json.body?.timeout || $json.timeout || 60000 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [520, 300],
+      "id": "extract-params-node"
+    },
+    {
+      "parameters": {
+        "url": "https://claude.ai/new",
+        "operation": "executeAction",
+        "action": "evaluate",
+        "code": "=// Функция для работы с Claude.ai\nasync function interactWithClaude() {\n  const userPrompt = '{{ $json.userPrompt }}';\n  const sessionKey = '{{ $json.sessionKey }}';\n  const cfBmCookie = '{{ $json.cfBmCookie }}';\n  \n  try {\n    // Установка куков для аутентификации\n    await page.setCookie(\n      {\n        name: 'sessionKey',\n        value: sessionKey,\n        domain: '.claude.ai',\n        path: '/',\n        httpOnly: true,\n        secure: true,\n        sameSite: 'None'\n      },\n      {\n        name: '__cf_bm',\n        value: cfBmCookie,\n        domain: '.claude.ai',\n        path: '/',\n        httpOnly: true,\n        secure: true,\n        sameSite: 'None'\n      }\n    );\n    \n    console.log('Куки установлены успешно');\n    \n    // Переход на страницу\n    await page.goto('https://claude.ai/new', { \n      waitUntil: 'networkidle2',\n      timeout: 30000 \n    });\n    \n    console.log('Страница загружена');\n    \n    // Ожидание загрузки интерфейса чата\n    await page.waitForSelector('div[contenteditable=\"true\"]', { timeout: 10000 });\n    \n    console.log('Поле ввода найдено');\n    \n    // Клик по полю ввода\n    await page.click('div[contenteditable=\"true\"]');\n    \n    // Ввод текста\n    await page.type('div[contenteditable=\"true\"]', userPrompt, { delay: 50 });\n    \n    console.log('Текст введен');\n    \n    // Отправка сообщения (поиск кнопки отправки)\n    await page.waitForSelector('button[aria-label=\"Send Message\"], button[type=\"submit\"]', { timeout: 5000 });\n    await page.click('button[aria-label=\"Send Message\"], button[type=\"submit\"]');\n    \n    console.log('Сообщение отправлено');\n    \n    // Ожидание ответа (появление нового сообщения)\n    await page.waitForFunction(\n      () => {\n        const messages = document.querySelectorAll('[data-testid=\"message\"]');\n        return messages.length >= 2;\n      },\n      { timeout: 60000 }\n    );\n    \n    console.log('Ответ получен');\n    \n    // Ожидание завершения генерации ответа\n    await page.waitForFunction(\n      () => {\n        const stopButton = document.querySelector('button[aria-label=\"Stop generating\"]');\n        return !stopButton || stopButton.disabled;\n      },\n      { timeout: 120000 }\n    );\n    \n    // Извлечение последнего ответа Claude\n    const response = await page.evaluate(() => {\n      const messages = document.querySelectorAll('[data-testid=\"message\"]');\n      if (messages.length < 2) return null;\n      \n      const lastMessage = messages[messages.length - 1];\n      return lastMessage.innerText || lastMessage.textContent;\n    });\n    \n    console.log('Ответ извлечен:', response ? response.substring(0, 100) : 'null');\n    \n    return {\n      success: true,\n      prompt: userPrompt,\n      response: response,\n      timestamp: new Date().toISOString(),\n      cookiesUsed: {\n        sessionKey: sessionKey.substring(0, 20) + '...',\n        cfBmCookie: cfBmCookie.substring(0, 20) + '...'\n      }\n    };\n    \n  } catch (error) {\n    console.error('Ошибка:', error.message);\n    \n    // Скриншот для отладки\n    const screenshot = await page.screenshot({ encoding: 'base64' });\n    \n    return {\n      success: false,\n      error: error.message,\n      errorStack: error.stack,\n      timestamp: new Date().toISOString(),\n      screenshot: screenshot\n    };\n  }\n}\n\n// Выполнение функции\nreturn await interactWithClaude();",
+        "launchOptions": {
+          "headless": true,
+          "args": [\n            \"--no-sandbox\",\n            \"--disable-setuid-sandbox\",\n            \"--disable-dev-shm-usage\",\n            \"--disable-accelerated-2d-canvas\",\n            \"--disable-gpu\"\n          ]\n        },
+        "options": {
+          "timeout": 120000,
+          "waitUntil": "networkidle2"
+        }
+      },
+      "name": "Puppeteer - Claude Interaction",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [740, 300],
+      "id": "puppeteer-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": "={{ $json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "response",
+              "name": "claudeResponse",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "processing_time",
+              "name": "processingTime",
+              "value": "={{ $json.processingTime || 'N/A' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [960, 200],
+      "id": "format-success-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error || 'Unknown error occurred' }}",
+              "type": "string"
+            },
+            {
+              "id": "error_stack",
+              "name": "errorStack",
+              "value": "={{ $json.errorStack || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "screenshot",
+              "name": "screenshot",
+              "value": "={{ $json.screenshot || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp || $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [960, 400],
+      "id": "format-error-node"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1180, 300],
+      "id": "respond-webhook-node"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Parameters": {
+      "main": [
+        [
+          {
+            "node": "Puppeteer - Claude Interaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Puppeteer - Claude Interaction": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-11-15T00:00:00.000Z",
+      "updatedAt": "2025-11-15T00:00:00.000Z",
+      "id": "claude-ai-automation",
+      "name": "Claude AI Automation"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-15T00:00:00.000Z",
+  "versionId": "1"
+}
