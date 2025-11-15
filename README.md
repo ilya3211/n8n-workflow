@@ -131,6 +131,7 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 | [CLAUDE_AUTOMATION_GUIDE.md](./CLAUDE_AUTOMATION_GUIDE.md) | Полное руководство (480+ строк) |
 | [CLAUDE_EXAMPLES.md](./CLAUDE_EXAMPLES.md) | 10 практических примеров |
 | [PUPPETEER_CODE.md](./PUPPETEER_CODE.md) | Код для Puppeteer node |
+| [CHROME_INSTALL_FIX.md](./CHROME_INSTALL_FIX.md) | Решение проблемы Chrome not found |
 
 ## 🎯 Примеры использования
 
@@ -260,6 +261,12 @@ Success  Error
 - **Ready-to-use** версия с вшитыми credentials
 
 ## 🛠️ Troubleshooting
+
+### Chrome/Chromium not found
+```
+Could not find Chrome (ver. 142.0.7444.162)
+```
+📖 **Решение**: [CHROME_INSTALL_FIX.md](./CHROME_INSTALL_FIX.md) - подробное руководство по установке Chrome/Chromium
 
 ### Puppeteer не запускается
 ```bash
