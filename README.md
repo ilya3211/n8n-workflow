@@ -4,22 +4,49 @@
 
 ## 🚀 Быстрый импорт
 
-### Claude.AI Puppeteer Automation - ПОЛНАЯ ВЕРСИЯ ⭐
+### 🌟 FULL VERSION - READY (со вшитыми credentials) - РЕКОМЕНДУЕТСЯ!
 
-**Импорт FULL VERSION (готов к использованию):**
+**Локальный файл с вашими credentials уже вставленными:**
+
+```
+workflows/claude-ai-puppeteer-automation-full-ready.json
+```
+
+**Как использовать:**
+1. **Установите Puppeteer**: `npm install puppeteer`
+2. n8n → Workflows → "+" → **Import from File**
+3. Выберите файл `claude-ai-puppeteer-automation-full-ready.json`
+4. Import → **ГОТОВО!** Просто нажмите Execute Workflow ✅
+5. Никакой настройки - credentials уже вшиты в код!
+
+**Преимущества:**
+- ✅ Работает сразу после импорта - 0 настройки!
+- ✅ Credentials из `.env.claude` уже вставлены в код
+- ✅ Не требует изменения через UI
+- ✅ Полная версия с обработкой ошибок и скриншотами
+- ✅ Детальное логирование каждого шага
+- ✅ 6 нод - упрощенная структура
+
+---
+
+### ⭐ FULL VERSION (для GitHub/публичных репозиториев)
+
+**Импорт через URL (требует настройки credentials):**
 
 ```
 https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-ai-puppeteer-automation-full.json
 ```
 
 **Как использовать:**
-1. **Установите Puppeteer** (если еще не установлен): `npm install puppeteer`
+1. **Установите Puppeteer**: `npm install puppeteer`
 2. n8n → Workflows → "+" → **Import from URL**
 3. Вставьте URL выше
-4. Import → Workflow загружен ✅ **Полностью рабочий!**
+4. Import → Workflow загружен ✅
 5. Откройте ноду "Extract Parameters"
 6. Замените `YOUR_SESSION_KEY_HERE` и `YOUR_CF_BM_COOKIE_HERE` на ваши значения
 7. Execute Node → Test!
+
+---
 
 ### Базовая версия (требует ручной настройки)
 
@@ -31,16 +58,28 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 
 📖 [Подробная инструкция](./QUICK_START.md)
 
+---
+
 ## 📦 Что внутри
 
-### 1. Claude.AI Puppeteer Automation
+### 1. Claude.AI Puppeteer Automation - FULL READY 🌟
+- ✅ Credentials вшиты в код - работает сразу!
 - ✅ Автоматическая отправка запросов к Claude.ai
 - ✅ Cookie-based аутентификация
 - ✅ Webhook и Manual Trigger
 - ✅ Обработка ошибок со скриншотами
 - ✅ Настраиваемые таймауты
+- ✅ Детальное логирование
 
-### 2. Google Gemini - Production Ready
+### 2. Claude.AI Puppeteer Automation - FULL
+- ✅ Автоматическая отправка запросов к Claude.ai
+- ✅ Cookie-based аутентификация
+- ✅ Webhook и Manual Trigger
+- ✅ Обработка ошибок со скриншотами
+- ✅ Настраиваемые таймауты
+- ⚙️ Требует настройки credentials через UI
+
+### 3. Google Gemini - Production Ready
 - ✅ Прямое API взаимодействие
 - ✅ Proxy support
 - ✅ Structured analysis
@@ -51,8 +90,11 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 | Файл | Описание |
 |------|----------|
 | [QUICK_START.md](./QUICK_START.md) | Быстрый старт за 5 минут |
+| [INSTALLATION.md](./INSTALLATION.md) | Подробная инструкция по установке |
+| [READY_TO_USE.md](./READY_TO_USE.md) | Гайд по FULL READY версии |
 | [CLAUDE_AUTOMATION_GUIDE.md](./CLAUDE_AUTOMATION_GUIDE.md) | Полное руководство (480+ строк) |
 | [CLAUDE_EXAMPLES.md](./CLAUDE_EXAMPLES.md) | 10 практических примеров |
+| [PUPPETEER_CODE.md](./PUPPETEER_CODE.md) | Код для Puppeteer node |
 
 ## 🎯 Примеры использования
 
@@ -86,14 +128,20 @@ Chat → Knowledge Base → Claude → Auto Response
 ## ⚙️ Требования
 
 ```bash
-# n8n-nodes-puppeteer
-npm install n8n-nodes-puppeteer
+# Puppeteer (обязательно)
+npm install puppeteer
 
 # Системные зависимости (Ubuntu/Debian)
 apt-get install -y chromium fonts-liberation libappindicator3-1
 ```
 
 ## 🔐 Настройка Credentials
+
+### Вариант 1: FULL READY (рекомендуется) - уже настроено!
+
+Credentials уже вшиты в файл `claude-ai-puppeteer-automation-full-ready.json`
+
+### Вариант 2: Ручная настройка
 
 1. Откройте https://claude.ai
 2. Авторизуйтесь
@@ -105,11 +153,18 @@ apt-get install -y chromium fonts-liberation libappindicator3-1
 
 ## 🔗 Прямые ссылки на workflows
 
-### Для импорта через URL:
+### Для локального импорта (с credentials):
 
-**Claude.AI Automation:**
+**FULL READY VERSION (рекомендуется):**
 ```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-ai-puppeteer-automation.json
+workflows/claude-ai-puppeteer-automation-full-ready.json
+```
+
+### Для импорта через URL (без credentials):
+
+**Claude.AI FULL:**
+```
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-ai-puppeteer-automation-full.json
 ```
 
 **Google Gemini:**
@@ -120,8 +175,8 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 ### Для прямой загрузки:
 
 ```bash
-# Claude Automation
-curl -O https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-ai-puppeteer-automation.json
+# Claude FULL (без credentials)
+curl -O https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-ai-puppeteer-automation-full.json
 
 # Google Gemini
 curl -O https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/google-gemini---no-proxy-(test-first).json
@@ -166,6 +221,7 @@ Success  Error
 - **Screenshot capture** при ошибках
 - **Configurable timeouts** для разных задач
 - **Multi-language** примеры (curl, JS, Python)
+- **Ready-to-use** версия с вшитыми credentials
 
 ## 🛠️ Troubleshooting
 
@@ -215,6 +271,7 @@ MIT License - используйте свободно
 - **Issues**: GitHub Issues
 - **Документация**: [CLAUDE_AUTOMATION_GUIDE.md](./CLAUDE_AUTOMATION_GUIDE.md)
 - **Примеры**: [CLAUDE_EXAMPLES.md](./CLAUDE_EXAMPLES.md)
+- **FULL READY**: [READY_TO_USE.md](./READY_TO_USE.md)
 
 ---
 
