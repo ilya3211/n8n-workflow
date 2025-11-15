@@ -15,7 +15,10 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 **Как использовать:**
 1. n8n → Workflows → "+" → **Import from URL**
 2. Вставьте URL выше
-3. Import → Настройте credentials → Test!
+3. Import → Workflow загружен ✅
+4. **Установите Puppeteer**: `npm install n8n-nodes-puppeteer`
+5. Добавьте Puppeteer node (см. [PUPPETEER_CODE.md](./PUPPETEER_CODE.md))
+6. Настройте credentials → Test!
 
 📖 [Подробная инструкция](./QUICK_START.md)
 
