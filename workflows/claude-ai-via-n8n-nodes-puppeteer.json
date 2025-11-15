@@ -1,0 +1,210 @@
+{
+  "name": "Claude.AI via n8n-nodes-puppeteer",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "Привет! Расскажи короткую шутку про программистов",
+              "type": "string"
+            },
+            {
+              "id": "sessionKey",
+              "name": "sessionKey",
+              "value": "YOUR_SESSION_KEY_HERE",
+              "type": "string"
+            },
+            {
+              "id": "cfBmCookie",
+              "name": "cfBmCookie",
+              "value": "YOUR_CF_BM_COOKIE_HERE",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Set Credentials",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "set-credentials"
+    },
+    {
+      "parameters": {
+        "url": "=https://claude.ai/new",
+        "operation": "page",
+        "pageAction": "goto",
+        "waitUntil": "networkidle2",
+        "timeout": 30000
+      },
+      "name": "Puppeteer - Navigate",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "puppeteer-navigate"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "cookies",
+        "cookieAction": "set",
+        "cookies": "={{ [{name: 'sessionKey', value: $('Set Credentials').item.json.sessionKey, domain: '.claude.ai', path: '/', httpOnly: true, secure: true, sameSite: 'None'}, {name: '__cf_bm', value: $('Set Credentials').item.json.cfBmCookie, domain: '.claude.ai', path: '/', httpOnly: true, secure: true, sameSite: 'None'}] }}"
+      },
+      "name": "Puppeteer - Set Cookies",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "puppeteer-cookies"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "waitForSelector",
+        "selector": "div[contenteditable=\"true\"]",
+        "timeout": 10000
+      },
+      "name": "Puppeteer - Wait Input",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "puppeteer-wait"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "type",
+        "selector": "div[contenteditable=\"true\"]",
+        "text": "={{ $('Set Credentials').item.json.prompt }}",
+        "delay": 50
+      },
+      "name": "Puppeteer - Type Prompt",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "id": "puppeteer-type"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "click",
+        "selector": "button[aria-label=\"Send Message\"], button[type=\"submit\"]"
+      },
+      "name": "Puppeteer - Submit",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "id": "puppeteer-submit"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "waitForFunction",
+        "functionCode": "() => document.querySelectorAll('[data-testid=\"message\"]').length >= 2",
+        "timeout": 60000
+      },
+      "name": "Puppeteer - Wait Response",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1780, 300],
+      "id": "puppeteer-wait-response"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "evaluate",
+        "functionCode": "() => {\n  const messages = document.querySelectorAll('[data-testid=\"message\"]');\n  if (messages.length < 2) return null;\n  const lastMessage = messages[messages.length - 1];\n  return lastMessage.innerText || lastMessage.textContent;\n}"
+      },
+      "name": "Puppeteer - Extract Response",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [2000, 300],
+      "id": "puppeteer-extract"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $('Set Credentials').item.json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "response",
+              "name": "claudeResponse",
+              "value": "={{ $json }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Format Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [2220, 300],
+      "id": "format-result"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Set Credentials", "type": "main", "index": 0}]]
+    },
+    "Set Credentials": {
+      "main": [[{"node": "Puppeteer - Navigate", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Navigate": {
+      "main": [[{"node": "Puppeteer - Set Cookies", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Set Cookies": {
+      "main": [[{"node": "Puppeteer - Wait Input", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Wait Input": {
+      "main": [[{"node": "Puppeteer - Type Prompt", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Type Prompt": {
+      "main": [[{"node": "Puppeteer - Submit", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Submit": {
+      "main": [[{"node": "Puppeteer - Wait Response", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Wait Response": {
+      "main": [[{"node": "Puppeteer - Extract Response", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Extract Response": {
+      "main": [[{"node": "Format Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-15T14:30:00.000Z",
+  "versionId": ""
+}
