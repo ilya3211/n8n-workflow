@@ -4,21 +4,30 @@
 
 ## 🚀 Быстрый импорт
 
-### Claude.AI Puppeteer Automation
+### Claude.AI Puppeteer Automation - ПОЛНАЯ ВЕРСИЯ ⭐
 
-**Импорт через URL в n8n:**
+**Импорт FULL VERSION (готов к использованию):**
+
+```
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-ai-puppeteer-automation-full.json
+```
+
+**Как использовать:**
+1. **Установите Puppeteer** (если еще не установлен): `npm install puppeteer`
+2. n8n → Workflows → "+" → **Import from URL**
+3. Вставьте URL выше
+4. Import → Workflow загружен ✅ **Полностью рабочий!**
+5. Откройте ноду "Extract Parameters"
+6. Замените `YOUR_SESSION_KEY_HERE` и `YOUR_CF_BM_COOKIE_HERE` на ваши значения
+7. Execute Node → Test!
+
+### Базовая версия (требует ручной настройки)
 
 ```
 https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-ai-puppeteer-automation.json
 ```
 
-**Как использовать:**
-1. n8n → Workflows → "+" → **Import from URL**
-2. Вставьте URL выше
-3. Import → Workflow загружен ✅
-4. **Установите Puppeteer**: `npm install n8n-nodes-puppeteer`
-5. Добавьте Puppeteer node (см. [PUPPETEER_CODE.md](./PUPPETEER_CODE.md))
-6. Настройте credentials → Test!
+Эта версия требует установки `n8n-nodes-puppeteer` и ручного добавления Puppeteer node.
 
 📖 [Подробная инструкция](./QUICK_START.md)
 

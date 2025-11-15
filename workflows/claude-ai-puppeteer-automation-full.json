@@ -1,0 +1,351 @@
+{
+  "name": "Claude.AI Puppeteer Automation - Full Version",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "claude-automation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "claude-automation-webhook",
+      "id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+    },
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        460
+      ],
+      "id": "b2c3d4e5-f6a7-4b5c-8d9e-0f1a2b3c4d5e"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "user_prompt",
+              "name": "userPrompt",
+              "value": "={{ $json.body?.prompt || $json.prompt || \"Привет! Расскажи короткую шутку про программистов\" }}",
+              "type": "string"
+            },
+            {
+              "id": "session_key",
+              "name": "sessionKey",
+              "value": "={{ $json.body?.sessionKey || $json.sessionKey || \"YOUR_SESSION_KEY_HERE\" }}",
+              "type": "string"
+            },
+            {
+              "id": "cf_bm_cookie",
+              "name": "cfBmCookie",
+              "value": "={{ $json.body?.cfBmCookie || $json.cfBmCookie || \"YOUR_CF_BM_COOKIE_HERE\" }}",
+              "type": "string"
+            },
+            {
+              "id": "timeout",
+              "name": "timeout",
+              "value": "={{ $json.body?.timeout || $json.timeout || 60000 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        460,
+        300
+      ],
+      "id": "c3d4e5f6-a7b8-4c5d-8e9f-0a1b2c3d4e5f"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Получение параметров из предыдущей ноды\nconst userPrompt = $input.first().json.userPrompt;\nconst sessionKey = $input.first().json.sessionKey;\nconst cfBmCookie = $input.first().json.cfBmCookie;\n\n// Импорт Puppeteer\nconst puppeteer = require('puppeteer');\n\nlet browser;\ntry {\n  // Запуск браузера\n  browser = await puppeteer.launch({\n    headless: true,\n    args: [\n      '--no-sandbox',\n      '--disable-setuid-sandbox',\n      '--disable-dev-shm-usage',\n      '--disable-gpu'\n    ]\n  });\n\n  const page = await browser.newPage();\n  \n  // Установка куков для аутентификации\n  await page.setCookie(\n    {\n      name: 'sessionKey',\n      value: sessionKey,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true,\n      sameSite: 'None'\n    },\n    {\n      name: '__cf_bm',\n      value: cfBmCookie,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true,\n      sameSite: 'None'\n    }\n  );\n\n  console.log('✅ Куки установлены');\n\n  // Переход на страницу Claude\n  await page.goto('https://claude.ai/new', {\n    waitUntil: 'networkidle2',\n    timeout: 30000\n  });\n\n  console.log('✅ Страница загружена');\n\n  // Ожидание загрузки интерфейса чата\n  await page.waitForSelector('div[contenteditable=\"true\"]', {\n    timeout: 10000\n  });\n\n  console.log('✅ Поле ввода найдено');\n\n  // Клик по полю ввода и ввод текста\n  await page.click('div[contenteditable=\"true\"]');\n  await page.type('div[contenteditable=\"true\"]', userPrompt, {\n    delay: 50\n  });\n\n  console.log('✅ Текст введен:', userPrompt.substring(0, 50));\n\n  // Поиск и клик по кнопке отправки\n  await page.waitForSelector('button[aria-label=\"Send Message\"], button[type=\"submit\"]', {\n    timeout: 5000\n  });\n  await page.click('button[aria-label=\"Send Message\"], button[type=\"submit\"]');\n\n  console.log('✅ Сообщение отправлено');\n\n  // Ожидание появления ответа\n  await page.waitForFunction(\n    () => {\n      const messages = document.querySelectorAll('[data-testid=\"message\"]');\n      return messages.length >= 2;\n    },\n    { timeout: 60000 }\n  );\n\n  console.log('✅ Ответ получен');\n\n  // Ожидание завершения генерации\n  await page.waitForFunction(\n    () => {\n      const stopButton = document.querySelector('button[aria-label=\"Stop generating\"]');\n      return !stopButton || stopButton.disabled;\n    },\n    { timeout: 120000 }\n  );\n\n  console.log('✅ Генерация завершена');\n\n  // Извлечение текста последнего сообщения\n  const response = await page.evaluate(() => {\n    const messages = document.querySelectorAll('[data-testid=\"message\"]');\n    if (messages.length < 2) return null;\n\n    const lastMessage = messages[messages.length - 1];\n    return lastMessage.innerText || lastMessage.textContent;\n  });\n\n  console.log('✅ Ответ извлечен');\n\n  // Закрытие браузера\n  await browser.close();\n\n  // Возврат успешного результата\n  return [\n    {\n      json: {\n        success: true,\n        prompt: userPrompt,\n        response: response,\n        timestamp: new Date().toISOString(),\n        responseLength: response ? response.length : 0,\n        cookiesUsed: {\n          sessionKey: sessionKey.substring(0, 20) + '...',\n          cfBmCookie: cfBmCookie.substring(0, 20) + '...'\n        }\n      }\n    }\n  ];\n\n} catch (error) {\n  console.error('❌ Ошибка:', error.message);\n\n  // Создание скриншота для отладки\n  let screenshot = null;\n  try {\n    if (browser) {\n      const page = (await browser.pages())[0];\n      screenshot = await page.screenshot({\n        encoding: 'base64',\n        fullPage: true\n      });\n    }\n  } catch (screenshotError) {\n    console.error('❌ Не удалось создать скриншот:', screenshotError.message);\n  }\n\n  // Закрытие браузера при ошибке\n  if (browser) {\n    await browser.close();\n  }\n\n  // Возврат ошибки\n  return [\n    {\n      json: {\n        success: false,\n        error: error.message,\n        errorStack: error.stack,\n        timestamp: new Date().toISOString(),\n        screenshot: screenshot\n      }\n    }\n  ];\n}"
+      },
+      "name": "Puppeteer - Claude Interaction",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "id": "d4e5f6a7-b8c9-4d5e-8f9a-0b1c2d3e4f5a"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success_check",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ],
+      "id": "e5f6a7b8-c9d0-4e5f-8a9b-0c1d2e3f4a5b"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": "={{ $json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "response",
+              "name": "claudeResponse",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "response_length",
+              "name": "responseLength",
+              "value": "={{ $json.responseLength }}",
+              "type": "number"
+            },
+            {
+              "id": "cookies_info",
+              "name": "cookiesInfo",
+              "value": "={{ $json.cookiesUsed }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        200
+      ],
+      "id": "f6a7b8c9-d0e1-4f5a-8b9c-0d1e2f3a4b5c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error || 'Unknown error occurred' }}",
+              "type": "string"
+            },
+            {
+              "id": "error_stack",
+              "name": "errorStack",
+              "value": "={{ $json.errorStack || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "screenshot",
+              "name": "screenshot",
+              "value": "={{ $json.screenshot || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp || $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "help",
+              "name": "help",
+              "value": "Проверьте: 1) Актуальность куков, 2) Доступность claude.ai, 3) Селекторы в коде",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        400
+      ],
+      "id": "a7b8c9d0-e1f2-4a5b-8c9d-0e1f2a3b4c5d"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1340,
+        300
+      ],
+      "id": "b8c9d0e1-f2a3-4b5c-8d9e-0f1a2b3c4d5e"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Parameters": {
+      "main": [
+        [
+          {
+            "node": "Puppeteer - Claude Interaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Puppeteer - Claude Interaction": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-15T14:00:00.000Z",
+  "versionId": ""
+}
