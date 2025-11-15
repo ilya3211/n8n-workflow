@@ -1,3 +1,5 @@
 .env.claude
 workflows/claude-ai-puppeteer-automation-ready.json
 workflows/claude-ai-puppeteer-automation-full-ready.json
+# Public version with placeholders is allowed
+# workflows/claude-ai-puppeteer-automation-full-ready-public.json
