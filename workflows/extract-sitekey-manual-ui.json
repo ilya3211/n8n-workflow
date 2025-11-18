@@ -1,0 +1,238 @@
+{
+  "name": "Extract Cloudflare Turnstile Sitekey (Manual with UI Settings)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger",
+      "notes": "Нажмите 'Execute Workflow' для запуска"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            },
+            {
+              "id": "waitTime",
+              "name": "waitTime",
+              "value": 3000,
+              "type": "number"
+            },
+            {
+              "id": "fullPage",
+              "name": "fullPage",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "name": "⚙️ Settings - Edit Here",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "settings",
+      "notes": "Измените targetURL на нужный сайт\nwaitTime - время ожидания загрузки капчи (мс)"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.targetURL }}",
+        "operation": "page",
+        "pageAction": "goto",
+        "waitUntil": "networkidle2",
+        "timeout": 30000
+      },
+      "name": "🌐 Open Page",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "navigate",
+      "notes": "Открывает целевую страницу и ждет загрузки"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "evaluate",
+        "functionCode": "() => {\n  return new Promise((resolve) => {\n    // Глобальные переменные для перехвата\n    window.captchaData = {};\n    window.captchaIntercepted = false;\n    \n    // Проверяем наличие turnstile каждые 50ms\n    const checkInterval = setInterval(() => {\n      if (window.turnstile && !window.captchaIntercepted) {\n        clearInterval(checkInterval);\n        window.captchaIntercepted = true;\n        \n        // Перехватываем оригинальный render\n        const originalRender = window.turnstile.render;\n        \n        window.turnstile.render = function(container, params) {\n          console.log('✅ [Turnstile] Render перехвачен:', params);\n          \n          // Сохраняем все параметры\n          window.captchaData = {\n            type: 'challenge_page',\n            sitekey: params.sitekey,\n            action: params.action,\n            cData: params.cData,\n            chlPageData: params.chlPageData,\n            theme: params.theme,\n            size: params.size,\n            callback: typeof params.callback === 'function',\n            intercepted: true,\n            timestamp: new Date().toISOString()\n          };\n          \n          // Вызываем оригинальный render\n          return originalRender.call(this, container, params);\n        };\n        \n        console.log('✅ [Turnstile] Готов к перехвату');\n      }\n    }, 50);\n    \n    // Таймаут 5 секунд\n    setTimeout(() => {\n      clearInterval(checkInterval);\n      console.log('⏰ [Turnstile] Время ожидания истекло');\n      resolve(true);\n    }, 5000);\n  });\n}"
+      },
+      "name": "🔌 Inject Intercept Script",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "inject",
+      "notes": "Перехватывает вызов turnstile.render() для Challenge Pages"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "waitForTimeout",
+        "timeout": "={{ $('⚙️ Settings - Edit Here').item.json.waitTime }}"
+      },
+      "name": "⏳ Wait for Captcha",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "wait",
+      "notes": "Ждет загрузки виджета Turnstile"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "evaluate",
+        "functionCode": "() => {\n  const result = {\n    success: false,\n    url: window.location.href,\n    userAgent: navigator.userAgent,\n    timestamp: new Date().toISOString(),\n    captchaType: 'not_found',\n    sitekey: null,\n    turnstileData: null,\n    searchLog: []\n  };\n  \n  // ═══════════════════════════════════════════════════════\n  // Метод 1: Проверка перехваченных данных (Challenge Page)\n  // ═══════════════════════════════════════════════════════\n  if (window.captchaData && window.captchaData.intercepted && window.captchaData.sitekey) {\n    result.success = true;\n    result.captchaType = 'challenge_page';\n    result.sitekey = window.captchaData.sitekey;\n    result.turnstileData = window.captchaData;\n    result.searchLog.push('✅ Method 1: turnstile.render() intercept - SUCCESS');\n    return result;\n  }\n  result.searchLog.push('❌ Method 1: turnstile.render() intercept - NOT FOUND');\n  \n  // ═══════════════════════════════════════════════════════\n  // Метод 2: Standalone Captcha - поиск по селекторам\n  // ═══════════════════════════════════════════════════════\n  const selectors = [\n    '[data-sitekey]',\n    '[sitekey]',\n    'div[class*=\"turnstile\"]',\n    'div[class*=\"cf-turnstile\"]',\n    'div[id*=\"turnstile\"]',\n    'div[id*=\"cf-turnstile\"]',\n    'iframe[src*=\"challenges.cloudflare.com\"]',\n    'iframe[src*=\"turnstile\"]',\n    '.cf-turnstile',\n    '#cf-turnstile'\n  ];\n  \n  for (const selector of selectors) {\n    try {\n      const element = document.querySelector(selector);\n      if (element) {\n        result.searchLog.push(`🔍 Method 2: Found element with selector: ${selector}`);\n        \n        // Проверяем data-sitekey\n        const sitekey = element.getAttribute('data-sitekey') || \n                       element.getAttribute('sitekey');\n        \n        if (sitekey && sitekey.length > 10) {\n          result.success = true;\n          result.captchaType = 'standalone';\n          result.sitekey = sitekey;\n          result.elementInfo = {\n            tagName: element.tagName,\n            className: element.className,\n            id: element.id,\n            selector: selector\n          };\n          result.searchLog.push(`✅ Method 2: Extracted sitekey from ${selector}`);\n          return result;\n        }\n        \n        // Проверяем iframe src\n        if (element.tagName === 'IFRAME') {\n          const src = element.getAttribute('src');\n          if (src) {\n            const sitekeyMatch = src.match(/[?&]sitekey=([^&]+)/);\n            if (sitekeyMatch && sitekeyMatch[1]) {\n              result.success = true;\n              result.captchaType = 'standalone_iframe';\n              result.sitekey = sitekeyMatch[1];\n              result.searchLog.push('✅ Method 2: Extracted from iframe src');\n              return result;\n            }\n          }\n        }\n      }\n    } catch (e) {\n      result.searchLog.push(`⚠️ Method 2: Error with selector ${selector}: ${e.message}`);\n    }\n  }\n  result.searchLog.push('❌ Method 2: Selector search - NOT FOUND');\n  \n  // ═══════════════════════════════════════════════════════\n  // Метод 3: Поиск в HTML коде страницы (Regex)\n  // ═══════════════════════════════════════════════════════\n  const htmlContent = document.documentElement.innerHTML;\n  \n  const regexPatterns = [\n    { name: 'data-sitekey attribute', regex: /data-sitekey=[\"']([0-9a-zA-Z_-]{10,100})[\"']/ },\n    { name: 'sitekey property', regex: /[\"']sitekey[\"'][\\s]*:[\\s]*[\"']([0-9a-zA-Z_-]{10,100})[\"']/ },\n    { name: 'sitekey value', regex: /sitekey:[\\s]*[\"']([0-9a-zA-Z_-]{10,100})[\"']/ },\n    { name: 'turnstile render call', regex: /turnstile\\.render\\([^,]+,[\\s]*{[^}]*sitekey:[\\s]*[\"']([^\"']+)[\"']/ },\n    { name: '0x pattern', regex: /[\"']0x[0-9a-zA-Z_-]{10,100}[\"']/ }\n  ];\n  \n  for (const pattern of regexPatterns) {\n    const match = htmlContent.match(pattern.regex);\n    if (match && match[1] && match[1].length >= 10) {\n      result.success = true;\n      result.captchaType = 'html_extraction';\n      result.sitekey = match[1];\n      result.searchLog.push(`✅ Method 3: Found via regex (${pattern.name})`);\n      return result;\n    }\n  }\n  result.searchLog.push('❌ Method 3: HTML regex search - NOT FOUND');\n  \n  // ═══════════════════════════════════════════════════════\n  // Метод 4: Поиск в <script> тегах\n  // ═══════════════════════════════════════════════════════\n  const scripts = document.querySelectorAll('script');\n  for (let i = 0; i < scripts.length; i++) {\n    const script = scripts[i];\n    const scriptContent = script.textContent || script.innerHTML;\n    \n    if (scriptContent.includes('turnstile') || scriptContent.includes('sitekey')) {\n      // Ищем паттерн 0x...\n      const match = scriptContent.match(/[\"']?(0x[0-9a-zA-Z_-]{10,100})[\"']?/);\n      if (match && match[1]) {\n        result.success = true;\n        result.captchaType = 'script_extraction';\n        result.sitekey = match[1];\n        result.searchLog.push(`✅ Method 4: Found in script tag #${i}`);\n        return result;\n      }\n    }\n  }\n  result.searchLog.push('❌ Method 4: Script tags search - NOT FOUND');\n  \n  // ═══════════════════════════════════════════════════════\n  // Метод 5: Поиск через window.turnstile\n  // ═══════════════════════════════════════════════════════\n  if (window.turnstile) {\n    try {\n      // Попытка найти в window объекте\n      const turnstileStr = JSON.stringify(window.turnstile);\n      const match = turnstileStr.match(/[\"']?(0x[0-9a-zA-Z_-]{10,100})[\"']?/);\n      if (match && match[1]) {\n        result.success = true;\n        result.captchaType = 'window_object';\n        result.sitekey = match[1];\n        result.searchLog.push('✅ Method 5: Found in window.turnstile');\n        return result;\n      }\n    } catch (e) {\n      result.searchLog.push(`⚠️ Method 5: Error: ${e.message}`);\n    }\n  }\n  result.searchLog.push('❌ Method 5: window.turnstile search - NOT FOUND');\n  \n  // ═══════════════════════════════════════════════════════\n  // Ничего не найдено\n  // ═══════════════════════════════════════════════════════\n  result.error = 'Cloudflare Turnstile sitekey not found on page';\n  result.suggestion = 'Try increasing waitTime or check if the page uses Turnstile';\n  \n  return result;\n}"
+      },
+      "name": "🔍 Extract Sitekey",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "id": "extract",
+      "notes": "Извлекает sitekey используя 5 методов поиска"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "screenshot",
+        "fullPage": "={{ $('⚙️ Settings - Edit Here').item.json.fullPage }}",
+        "screenshotOptions": "{\"encoding\": \"base64\", \"type\": \"png\"}"
+      },
+      "name": "📸 Screenshot (Optional)",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "id": "screenshot",
+      "notes": "Опционально: делает скриншот страницы для отладки"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "✅ success",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "captcha_type",
+              "name": "📋 captchaType",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.captchaType }}",
+              "type": "string"
+            },
+            {
+              "id": "website_url",
+              "name": "🌐 websiteURL",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "sitekey",
+              "name": "🔑 websiteKey (SITEKEY)",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.sitekey }}",
+              "type": "string"
+            },
+            {
+              "id": "user_agent",
+              "name": "🖥️ userAgent",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.userAgent }}",
+              "type": "string"
+            },
+            {
+              "id": "action",
+              "name": "⚡ action (for Challenge)",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.turnstileData?.action || null }}",
+              "type": "string"
+            },
+            {
+              "id": "data",
+              "name": "📦 data (for Challenge)",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.turnstileData?.cData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "pagedata",
+              "name": "📄 pagedata (for Challenge)",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.turnstileData?.chlPageData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "search_log",
+              "name": "🔍 searchLog",
+              "value": "={{ JSON.stringify($('🔍 Extract Sitekey').item.json.searchLog, null, 2) }}",
+              "type": "string"
+            },
+            {
+              "id": "rucaptcha_payload",
+              "name": "🤖 RuCaptcha API Request",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.success ? JSON.stringify({\n  clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $('🔍 Extract Sitekey').item.json.url,\n    websiteKey: $('🔍 Extract Sitekey').item.json.sitekey,\n    action: $('🔍 Extract Sitekey').item.json.turnstileData?.action,\n    data: $('🔍 Extract Sitekey').item.json.turnstileData?.cData,\n    pagedata: $('🔍 Extract Sitekey').item.json.turnstileData?.chlPageData\n  }\n}, null, 2) : 'N/A - Sitekey not found' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "⏰ timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "error",
+              "name": "❌ error",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.error || null }}",
+              "type": "string"
+            },
+            {
+              "id": "suggestion",
+              "name": "💡 suggestion",
+              "value": "={{ $('🔍 Extract Sitekey').item.json.suggestion || null }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "📊 Final Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1780, 300],
+      "id": "result",
+      "notes": "Результат извлечения:\n- websiteKey - ключ капчи\n- RuCaptcha API Request - готовый JSON для API\n- searchLog - лог поиска"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "⚙️ Settings - Edit Here", "type": "main", "index": 0}]]
+    },
+    "⚙️ Settings - Edit Here": {
+      "main": [[{"node": "🌐 Open Page", "type": "main", "index": 0}]]
+    },
+    "🌐 Open Page": {
+      "main": [[{"node": "🔌 Inject Intercept Script", "type": "main", "index": 0}]]
+    },
+    "🔌 Inject Intercept Script": {
+      "main": [[{"node": "⏳ Wait for Captcha", "type": "main", "index": 0}]]
+    },
+    "⏳ Wait for Captcha": {
+      "main": [[{"node": "🔍 Extract Sitekey", "type": "main", "index": 0}]]
+    },
+    "🔍 Extract Sitekey": {
+      "main": [[{"node": "📸 Screenshot (Optional)", "type": "main", "index": 0}]]
+    },
+    "📸 Screenshot (Optional)": {
+      "main": [[{"node": "📊 Final Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["cloudflare", "turnstile", "sitekey", "manual"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T17:15:00.000Z",
+  "versionId": ""
+}
