@@ -1,0 +1,168 @@
+{
+  "name": "Extract Cloudflare Turnstile Sitekey (Final Working)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            },
+            {
+              "id": "waitTime",
+              "name": "waitTime",
+              "value": 5000,
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "name": "⚙️ Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "settings",
+      "notes": "Измените targetURL на нужный сайт\nwaitTime - время ожидания (мс)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/content?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"{{ $json.targetURL }}\",\n  \"waitForTimeout\": {{ $json.waitTime }},\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle2\"\n  }\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "🌐 Get Page HTML",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "content",
+      "notes": "Получает HTML контент через Browserless.io"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Получаем HTML контент\nconst html = $input.item.json;\nconst targetURL = $('⚙️ Settings').item.json.targetURL;\n\nlet htmlContent = '';\n\n// Проверяем разные форматы ответа\nif (typeof html === 'string') {\n  htmlContent = html;\n} else if (html && html.body) {\n  htmlContent = html.body;\n} else if (html && typeof html === 'object') {\n  htmlContent = JSON.stringify(html);\n} else {\n  htmlContent = String(html);\n}\n\n// Результат\nconst result = {\n  success: false,\n  websiteURL: targetURL,\n  timestamp: new Date().toISOString(),\n  captchaType: 'not_found',\n  websiteKey: null,\n  searchMethods: [],\n  htmlLength: htmlContent.length\n};\n\n// Метод 1: data-sitekey attribute\ntry {\n  const match1 = htmlContent.match(/data-sitekey\\s*=\\s*[\"']([0-9a-zA-Z_-]{10,100})[\"']/);\n  if (match1 && match1[1]) {\n    result.success = true;\n    result.captchaType = 'standalone';\n    result.websiteKey = match1[1];\n    result.searchMethods.push('✅ data-sitekey attribute');\n    result.rucaptchaPayload = {\n      clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n      task: {\n        type: 'TurnstileTaskProxyless',\n        websiteURL: targetURL,\n        websiteKey: match1[1]\n      }\n    };\n    return result;\n  }\n  result.searchMethods.push('❌ data-sitekey attribute - not found');\n} catch (e) {\n  result.searchMethods.push('⚠️ data-sitekey - error: ' + e.message);\n}\n\n// Метод 2: sitekey property в JS объектах\ntry {\n  const match2 = htmlContent.match(/[\"']sitekey[\"']\\s*:\\s*[\"']([0-9a-zA-Z_-]{10,100})[\"']/);\n  if (match2 && match2[1]) {\n    result.success = true;\n    result.captchaType = 'standalone';\n    result.websiteKey = match2[1];\n    result.searchMethods.push('✅ sitekey property');\n    result.rucaptchaPayload = {\n      clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n      task: {\n        type: 'TurnstileTaskProxyless',\n        websiteURL: targetURL,\n        websiteKey: match2[1]\n      }\n    };\n    return result;\n  }\n  result.searchMethods.push('❌ sitekey property - not found');\n} catch (e) {\n  result.searchMethods.push('⚠️ sitekey property - error: ' + e.message);\n}\n\n// Метод 3: iframe src с challenges.cloudflare.com\ntry {\n  const match3 = htmlContent.match(/src\\s*=\\s*[\"']([^\"']*challenges\\.cloudflare\\.com[^\"']*)[\"']/);\n  if (match3 && match3[1]) {\n    const sitekeyFromIframe = match3[1].match(/[?&]sitekey=([^&\"']+)/);\n    if (sitekeyFromIframe && sitekeyFromIframe[1]) {\n      result.success = true;\n      result.captchaType = 'standalone_iframe';\n      result.websiteKey = sitekeyFromIframe[1];\n      result.searchMethods.push('✅ iframe src');\n      result.rucaptchaPayload = {\n        clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n        task: {\n          type: 'TurnstileTaskProxyless',\n          websiteURL: targetURL,\n          websiteKey: sitekeyFromIframe[1]\n        }\n      };\n      return result;\n    }\n  }\n  result.searchMethods.push('❌ iframe src - not found');\n} catch (e) {\n  result.searchMethods.push('⚠️ iframe src - error: ' + e.message);\n}\n\n// Метод 4: паттерн 0x... (характерно для Cloudflare)\ntry {\n  const match4 = htmlContent.match(/[\"'](0x[0-9a-zA-Z_-]{10,100})[\"']/);\n  if (match4 && match4[1]) {\n    result.success = true;\n    result.captchaType = 'html_extraction';\n    result.websiteKey = match4[1];\n    result.searchMethods.push('✅ 0x pattern');\n    result.rucaptchaPayload = {\n      clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n      task: {\n        type: 'TurnstileTaskProxyless',\n        websiteURL: targetURL,\n        websiteKey: match4[1]\n      }\n    };\n    return result;\n  }\n  result.searchMethods.push('❌ 0x pattern - not found');\n} catch (e) {\n  result.searchMethods.push('⚠️ 0x pattern - error: ' + e.message);\n}\n\n// Ничего не найдено\nresult.error = 'Cloudflare Turnstile sitekey not found on page';\nresult.suggestion = 'Try increasing waitTime or check if the page actually uses Turnstile';\n\nreturn result;"
+      },
+      "name": "🔍 Extract Sitekey",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "extract",
+      "notes": "Извлекает sitekey из HTML используя 4 метода"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "✅ success",
+              "value": "={{ $json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "websiteKey",
+              "name": "🔑 websiteKey",
+              "value": "={{ $json.websiteKey }}",
+              "type": "string"
+            },
+            {
+              "id": "websiteURL",
+              "name": "🌐 websiteURL",
+              "value": "={{ $json.websiteURL }}",
+              "type": "string"
+            },
+            {
+              "id": "captchaType",
+              "name": "📋 captchaType",
+              "value": "={{ $json.captchaType }}",
+              "type": "string"
+            },
+            {
+              "id": "searchMethods",
+              "name": "🔍 searchMethods",
+              "value": "={{ JSON.stringify($json.searchMethods, null, 2) }}",
+              "type": "string"
+            },
+            {
+              "id": "rucaptchaPayload",
+              "name": "🤖 RuCaptcha Payload",
+              "value": "={{ $json.rucaptchaPayload ? JSON.stringify($json.rucaptchaPayload, null, 2) : 'N/A - Sitekey not found' }}",
+              "type": "string"
+            },
+            {
+              "id": "error",
+              "name": "❌ error",
+              "value": "={{ $json.error || null }}",
+              "type": "string"
+            },
+            {
+              "id": "suggestion",
+              "name": "💡 suggestion",
+              "value": "={{ $json.suggestion || null }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "⏰ timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "📊 Final Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1120, 300],
+      "id": "result",
+      "notes": "Форматированный результат с sitekey и RuCaptcha payload"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "⚙️ Settings", "type": "main", "index": 0}]]
+    },
+    "⚙️ Settings": {
+      "main": [[{"node": "🌐 Get Page HTML", "type": "main", "index": 0}]]
+    },
+    "🌐 Get Page HTML": {
+      "main": [[{"node": "🔍 Extract Sitekey", "type": "main", "index": 0}]]
+    },
+    "🔍 Extract Sitekey": {
+      "main": [[{"node": "📊 Final Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["browserless", "turnstile", "cloudflare", "working"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T18:45:00.000Z",
+  "versionId": ""
+}
