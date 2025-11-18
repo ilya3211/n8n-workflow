@@ -1,0 +1,233 @@
+{
+  "name": "Claude.AI with RuCaptcha Turnstile",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rucaptchaKey = '5fffba5de3bed2317417f625985ec684';\nconst sessionKey = 'YOUR_SESSION_KEY_HERE';\nconst cfBmCookie = 'YOUR_CF_BM_COOKIE_HERE';\nconst userPrompt = $input.first().json.prompt || 'Привет! Как дела?';\n\nreturn [{json: {\n  rucaptchaKey: rucaptchaKey,\n  sessionKey: sessionKey,\n  cfBmCookie: cfBmCookie,\n  userPrompt: userPrompt,\n  websiteURL: 'https://claude.ai/new'\n}}];"
+      },
+      "id": "b1",
+      "name": "Set Credentials",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/createTask",
+        "sendBody": true,
+        "contentType": "application/json",
+        "jsonBody": "={{ JSON.stringify({\n  clientKey: $json.rucaptchaKey,\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $json.websiteURL,\n    websiteKey: '0x4AAAAAAAx72oZP84dEhPLj'\n  }\n}) }}",
+        "options": {}
+      },
+      "id": "c1",
+      "name": "Create Turnstile Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "d1c1",
+              "leftValue": "={{ $json.errorId }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d1",
+      "name": "Check Task Created",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "unit": "seconds",
+        "amount": 3
+      },
+      "id": "e1",
+      "name": "Wait 3s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1120, 200],
+      "webhookId": "wait-node-webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/getTaskResult",
+        "sendBody": true,
+        "contentType": "application/json",
+        "jsonBody": "={{ JSON.stringify({\n  clientKey: $('Set Credentials').item.json.rucaptchaKey,\n  taskId: $json.taskId\n}) }}",
+        "options": {}
+      },
+      "id": "f1",
+      "name": "Get Task Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "g1c1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "g1",
+      "name": "Check if Ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const token = $json.solution.token;\nconst sessionKey = $('Set Credentials').item.json.sessionKey;\nconst cfBmCookie = $('Set Credentials').item.json.cfBmCookie;\nconst userPrompt = $('Set Credentials').item.json.userPrompt;\nconst browserlessToken = '2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac';\n\nconst code = `export default async({page,context})=>{try{await page.evaluateOnNewDocument(()=>{Object.defineProperty(navigator,'webdriver',{get:()=>undefined});window.chrome={runtime:{}};});await page.setCookie({name:'sessionKey',value:'${sessionKey}',domain:'.claude.ai',path:'/',httpOnly:true,secure:true},{name:'__cf_bm',value:'${cfBmCookie}',domain:'.claude.ai',path:'/',httpOnly:true,secure:true});await page.goto('https://claude.ai/new',{waitUntil:'domcontentloaded',timeout:60000});await page.evaluate((token)=>{const input=document.querySelector('input[name=\"cf-turnstile-response\"]');if(input){input.value=token;}const callback=window.tsCallback||window.turnstileCallback;if(callback){callback(token);}},${JSON.stringify(token)});await new Promise(r=>setTimeout(r,3000));const url=page.url();const title=await page.title();if(url.includes('login')){return{success:false,error:'Auth failed',url:url};}if(title.includes('Just a moment')){return{success:false,error:'Turnstile not bypassed',url:url,title:title};}let inputSelector=null;const selectors=['div[contenteditable=\"true\"]','textarea'];for(const sel of selectors){try{await page.waitForSelector(sel,{timeout:5000});inputSelector=sel;break;}catch(e){continue;}}if(!inputSelector){return{success:false,error:'Input not found',url:url,title:title};}await page.type(inputSelector,${JSON.stringify(userPrompt)},{delay:50});await new Promise(r=>setTimeout(r,500));const btnSelectors=['button[aria-label*=\"Send\"]','button:has-text(\"Send\")'];for(const btn of btnSelectors){try{await page.click(btn);break;}catch(e){continue;}}await page.waitForFunction(()=>{const msgs=document.querySelectorAll('[data-testid=\"message\"]');const last=msgs[msgs.length-1];if(!last)return false;const assistant=last.querySelector('[data-testid=\"assistant-message\"]');return assistant&&last.textContent.trim().length>10;},{timeout:120000});const response=await page.evaluate(()=>{const msgs=document.querySelectorAll('[data-testid=\"message\"]');const last=msgs[msgs.length-1];if(last){const assistant=last.querySelector('[data-testid=\"assistant-message\"]');if(assistant)return assistant.textContent.trim();}return 'No response';});return{success:true,response:response,prompt:${JSON.stringify(userPrompt)},timestamp:new Date().toISOString()};}catch(err){return{success:false,error:err.message,stack:err.stack};}};`;\n\nreturn [{json: {\n  url: `https://production-sfo.browserless.io/function?token=${browserlessToken}&stealth`,\n  body: code\n}}];"
+      },
+      "id": "h1",
+      "name": "Prepare Browserless Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/javascript",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "i1",
+      "name": "Execute on Browserless",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 100]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "j1a1",
+              "name": "status",
+              "value": "={{ $json.success ? '✅ Success' : '❌ Error' }}",
+              "type": "string"
+            },
+            {
+              "id": "j1a2",
+              "name": "prompt",
+              "value": "={{ $json.prompt || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "j1a3",
+              "name": "response",
+              "value": "={{ $json.response || $json.error || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "j1a4",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp || new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "j1",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2220, 100]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Set Credentials", "type": "main", "index": 0}]]
+    },
+    "Set Credentials": {
+      "main": [[{"node": "Create Turnstile Task", "type": "main", "index": 0}]]
+    },
+    "Create Turnstile Task": {
+      "main": [[{"node": "Check Task Created", "type": "main", "index": 0}]]
+    },
+    "Check Task Created": {
+      "main": [
+        [{"node": "Wait 3s", "type": "main", "index": 0}],
+        []
+      ]
+    },
+    "Wait 3s": {
+      "main": [[{"node": "Get Task Result", "type": "main", "index": 0}]]
+    },
+    "Get Task Result": {
+      "main": [[{"node": "Check if Ready", "type": "main", "index": 0}]]
+    },
+    "Check if Ready": {
+      "main": [
+        [{"node": "Prepare Browserless Request", "type": "main", "index": 0}],
+        [{"node": "Wait 3s", "type": "main", "index": 0}]
+      ]
+    },
+    "Prepare Browserless Request": {
+      "main": [[{"node": "Execute on Browserless", "type": "main", "index": 0}]]
+    },
+    "Execute on Browserless": {
+      "main": [[{"node": "Format Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
