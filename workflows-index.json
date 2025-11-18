@@ -1,0 +1,137 @@
+{
+  "repository": "ilya3211/n8n-workflow",
+  "branch": "claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK",
+  "version": "1.0.0",
+  "updated": "2025-11-18",
+  "workflows": [
+    {
+      "id": "google-ai-studio-browserless-automation",
+      "name": "Google AI Studio - Browserless Automation (Basic)",
+      "description": "Базовая автоматизация Google AI Studio через Browserless и Puppeteer",
+      "version": "1.0.0",
+      "category": "AI Automation",
+      "tags": ["google", "ai-studio", "gemini", "browserless", "puppeteer", "automation"],
+      "import_url": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-automation.json",
+      "requirements": {
+        "n8n_version": "1.0+",
+        "browserless": "2.0+",
+        "credentials": ["Browserless API"]
+      },
+      "features": [
+        "Webhook и Manual триггеры",
+        "Puppeteer автоматизация",
+        "Получение ответов от Gemini",
+        "Создание скриншотов",
+        "Базовая обработка ошибок"
+      ]
+    },
+    {
+      "id": "google-ai-studio-browserless-advanced",
+      "name": "Google AI Studio - Browserless Automation (Advanced)",
+      "description": "Продвинутая автоматизация с валидацией, историей и расширенными настройками",
+      "version": "1.0.0",
+      "category": "AI Automation",
+      "tags": ["google", "ai-studio", "gemini", "browserless", "puppeteer", "automation", "advanced"],
+      "import_url": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-advanced.json",
+      "requirements": {
+        "n8n_version": "1.0+",
+        "browserless": "2.0+",
+        "credentials": ["Browserless API"]
+      },
+      "features": [
+        "Валидация входных параметров",
+        "Гибкая конфигурация браузера",
+        "Поддержка различных моделей",
+        "Настройка temperature и tokens",
+        "Сохранение истории запросов",
+        "Request ID для трекинга",
+        "Base64 скриншоты",
+        "Расширенная обработка ошибок"
+      ],
+      "parameters": {
+        "prompt": {
+          "type": "string",
+          "required": true,
+          "description": "Текст запроса к AI"
+        },
+        "model": {
+          "type": "string",
+          "required": false,
+          "default": "gemini-pro",
+          "description": "Модель AI для использования"
+        },
+        "temperature": {
+          "type": "number",
+          "required": false,
+          "default": 0.7,
+          "min": 0,
+          "max": 1,
+          "description": "Температура генерации"
+        },
+        "maxTokens": {
+          "type": "number",
+          "required": false,
+          "default": 2048,
+          "description": "Максимальное количество токенов"
+        },
+        "browserlessUrl": {
+          "type": "string",
+          "required": false,
+          "default": "ws://localhost:3000",
+          "description": "URL Browserless сервера"
+        },
+        "saveHistory": {
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Сохранять историю запросов"
+        }
+      }
+    },
+    {
+      "id": "google-gemini-no-proxy",
+      "name": "Google Gemini - Production Ready",
+      "description": "Прямые API вызовы к Google Gemini без прокси",
+      "version": "1.0.0",
+      "category": "AI API",
+      "tags": ["google", "gemini", "api", "direct"],
+      "import_url": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-gemini---no-proxy-(test-first).json",
+      "requirements": {
+        "n8n_version": "1.0+",
+        "credentials": ["Google API Key"]
+      }
+    }
+  ],
+  "documentation": [
+    {
+      "title": "Google AI Studio Automation - Full Documentation",
+      "url": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/GOOGLE_AI_STUDIO_AUTOMATION_README.md",
+      "language": "ru"
+    },
+    {
+      "title": "Import URLs Guide",
+      "url": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/IMPORT_URLS.md",
+      "language": "ru"
+    },
+    {
+      "title": "Quick Import Reference",
+      "url": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/QUICK_IMPORT.txt",
+      "language": "ru"
+    }
+  ],
+  "quick_links": {
+    "basic_workflow": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-automation.json",
+    "advanced_workflow": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-advanced.json",
+    "documentation": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/GOOGLE_AI_STUDIO_AUTOMATION_README.md"
+  },
+  "examples": {
+    "basic_usage": {
+      "curl": "curl -X POST http://your-n8n/webhook/ai-studio-automation -H 'Content-Type: application/json' -d '{\"prompt\": \"Расскажи о квантовых компьютерах\"}'",
+      "javascript": "fetch('http://your-n8n/webhook/ai-studio-automation', {\n  method: 'POST',\n  headers: {'Content-Type': 'application/json'},\n  body: JSON.stringify({prompt: 'Расскажи о квантовых компьютерах'})\n})"
+    },
+    "advanced_usage": {
+      "curl": "curl -X POST http://your-n8n/webhook/ai-studio-advanced -H 'Content-Type: application/json' -d '{\"prompt\": \"Создай план статьи о нейросетях\", \"model\": \"gemini-2.0-flash-exp\", \"temperature\": 0.7, \"maxTokens\": 4096}'",
+      "javascript": "fetch('http://your-n8n/webhook/ai-studio-advanced', {\n  method: 'POST',\n  headers: {'Content-Type': 'application/json'},\n  body: JSON.stringify({\n    prompt: 'Создай план статьи о нейросетях',\n    model: 'gemini-2.0-flash-exp',\n    temperature: 0.7,\n    maxTokens: 4096,\n    saveHistory: true\n  })\n})"
+    }
+  }
+}

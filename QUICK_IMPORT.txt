@@ -1,0 +1,56 @@
+═══════════════════════════════════════════════════════════════════════════════
+  QUICK IMPORT URLS FOR N8N - Google AI Studio Browserless Automation
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 COPY & PASTE THESE URLS INTO N8N
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔷 БАЗОВАЯ ВЕРСИЯ (Basic Workflow)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-automation.json
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+🔶 ПРОДВИНУТАЯ ВЕРСИЯ (Advanced Workflow)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-advanced.json
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+📖 ДОКУМЕНТАЦИЯ (Full Documentation)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/GOOGLE_AI_STUDIO_AUTOMATION_README.md
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+═══════════════════════════════════════════════════════════════════════════════
+  КАК ИМПОРТИРОВАТЬ В N8N
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Откройте n8n
+2. Workflows → "+" → Import from URL
+3. Вставьте одну из ссылок выше
+4. Import → Activate
+
+═══════════════════════════════════════════════════════════════════════════════
+  ТРЕБУЕТСЯ BROWSERLESS
+═══════════════════════════════════════════════════════════════════════════════
+
+Запустите Browserless через Docker:
+
+docker run -p 3000:3000 browserless/chrome
+
+Или с токеном:
+
+docker run -p 3000:3000 -e "TOKEN=your-token" browserless/chrome
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Версия: 1.0.0 | Дата: 2025-11-18
+Репозиторий: https://github.com/ilya3211/n8n-workflow
+
+═══════════════════════════════════════════════════════════════════════════════
