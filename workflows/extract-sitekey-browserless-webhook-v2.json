@@ -1,0 +1,115 @@
+{
+  "name": "Extract Sitekey Browserless Webhook v2",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "extract-sitekey",
+        "method": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "extract-sitekey-v2",
+      "id": "webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "={{ $json.body.url || $json.query.url || 'https://claude.ai/new' }}",
+              "type": "string"
+            },
+            {
+              "id": "waitTime",
+              "name": "waitTime",
+              "value": "={{ $json.body.waitTime || 5000 }}",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "name": "Extract Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "params"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/content?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  url: $json.targetURL,\n  waitForTimeout: $json.waitTime,\n  gotoOptions: {\n    waitUntil: 'networkidle2'\n  }\n}) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Get Page Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "content"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.item.json;\nconst targetURL = $('Extract Parameters').item.json.targetURL;\n\nlet htmlContent = '';\nif (typeof html === 'string') {\n  htmlContent = html;\n} else if (html.body) {\n  htmlContent = html.body;\n} else {\n  htmlContent = JSON.stringify(html);\n}\n\nconst result = {\n  success: false,\n  websiteURL: targetURL,\n  timestamp: new Date().toISOString(),\n  captchaType: 'not_found',\n  websiteKey: null,\n  searchMethods: []\n};\n\n// Метод 1: data-sitekey\nconst m1 = htmlContent.match(/data-sitekey=[\"']([0-9a-zA-Z_-]{10,100})[\"']/);\nif (m1 && m1[1]) {\n  result.success = true;\n  result.captchaType = 'standalone';\n  result.websiteKey = m1[1];\n  result.searchMethods.push('✅ data-sitekey attribute');\n  result.rucaptchaPayload = {\n    clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n    task: {\n      type: 'TurnstileTaskProxyless',\n      websiteURL: targetURL,\n      websiteKey: m1[1]\n    }\n  };\n  return result;\n}\nresult.searchMethods.push('❌ data-sitekey not found');\n\n// Метод 2: sitekey property\nconst m2 = htmlContent.match(/[\"']sitekey[\"']\\s*:\\s*[\"']([0-9a-zA-Z_-]{10,100})[\"']/);\nif (m2 && m2[1]) {\n  result.success = true;\n  result.captchaType = 'standalone';\n  result.websiteKey = m2[1];\n  result.searchMethods.push('✅ sitekey property');\n  result.rucaptchaPayload = {\n    clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n    task: {\n      type: 'TurnstileTaskProxyless',\n      websiteURL: targetURL,\n      websiteKey: m2[1]\n    }\n  };\n  return result;\n}\nresult.searchMethods.push('❌ sitekey property not found');\n\n// Метод 3: iframe src\nconst m3 = htmlContent.match(/src=[\"']([^\"']*challenges\\.cloudflare\\.com[^\"']*)[\"]/);\nif (m3 && m3[1]) {\n  const m3sub = m3[1].match(/[?&]sitekey=([^&\"']+)/);\n  if (m3sub && m3sub[1]) {\n    result.success = true;\n    result.captchaType = 'standalone_iframe';\n    result.websiteKey = m3sub[1];\n    result.searchMethods.push('✅ iframe src');\n    result.rucaptchaPayload = {\n      clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n      task: {\n        type: 'TurnstileTaskProxyless',\n        websiteURL: targetURL,\n        websiteKey: m3sub[1]\n      }\n    };\n    return result;\n  }\n}\nresult.searchMethods.push('❌ iframe src not found');\n\n// Метод 4: 0x pattern\nconst m4 = htmlContent.match(/[\"'](0x[0-9a-zA-Z_-]{10,100})[\"']/);\nif (m4 && m4[1]) {\n  result.success = true;\n  result.captchaType = 'html_extraction';\n  result.websiteKey = m4[1];\n  result.searchMethods.push('✅ 0x pattern');\n  result.rucaptchaPayload = {\n    clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n    task: {\n      type: 'TurnstileTaskProxyless',\n      websiteURL: targetURL,\n      websiteKey: m4[1]\n    }\n  };\n  return result;\n}\nresult.searchMethods.push('❌ 0x pattern not found');\n\nresult.error = 'Cloudflare Turnstile sitekey not found';\nreturn result;"
+      },
+      "name": "Extract Sitekey",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "extract"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {}
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "respond"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Extract Parameters", "type": "main", "index": 0}]]
+    },
+    "Extract Parameters": {
+      "main": [[{"node": "Get Page Content", "type": "main", "index": 0}]]
+    },
+    "Get Page Content": {
+      "main": [[{"node": "Extract Sitekey", "type": "main", "index": 0}]]
+    },
+    "Extract Sitekey": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["browserless", "webhook", "api", "turnstile"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T18:35:00.000Z",
+  "versionId": ""
+}
