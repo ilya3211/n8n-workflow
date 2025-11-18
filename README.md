@@ -4,6 +4,43 @@
 
 ## 🚀 Быстрый импорт
 
+### 🔓 RuCaptcha + Browserless (ОБХОД CLOUDFLARE!) 🔥🔥🔥
+
+**Импорт через URL:**
+
+```
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-rucaptcha-automation.json
+```
+
+**Как использовать:**
+1. n8n → Workflows → "+" → **Import from URL**
+2. Вставьте URL выше
+3. Import → Workflow загружен ✅
+4. **ВАЖНО:** Найдите Cloudflare Turnstile sitekey (см. [HOW_TO_FIND_SITEKEY.md](./HOW_TO_FIND_SITEKEY.md))
+5. Откройте ноду **"Set Credentials"**
+6. Замените `YOUR_SESSION_KEY_HERE` и `YOUR_CF_BM_COOKIE_HERE`
+7. Откройте ноду **"Create Turnstile Task"**
+8. Замените `websiteKey` на найденный sitekey
+9. Execute Workflow → Test!
+
+**Преимущества:**
+- ✅ **ОБХОДИТ CLOUDFLARE TURNSTILE!** 🎯
+- ✅ Автоматическое решение капчи через RuCaptcha API
+- ✅ Работает там где другие методы не работают
+- ✅ Решение за 3-15 секунд (~$0.0015 за капчу)
+- ✅ Browserless + stealth mode
+- ✅ Надежное взаимодействие с Claude.ai
+
+📖 [Полное руководство по RuCaptcha интеграции](./RUCAPTCHA_GUIDE.md)
+🔍 [8 способов найти Turnstile sitekey](./HOW_TO_FIND_SITEKEY.md)
+
+**Инструменты для поиска sitekey:**
+- 🤖 [n8n Workflow для извлечения sitekey](./workflows/extract-turnstile-sitekey.json)
+- 🐍 [Python скрипт](./scripts/find_sitekey.py)
+- 📜 [Bash скрипт](./scripts/find-turnstile-sitekey.sh)
+
+---
+
 ### ⚡ Claude API (БЕЗ БРАУЗЕРА) - САМЫЙ ПРОСТОЙ! 🔥
 
 **Импорт через URL:**
@@ -196,6 +233,8 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 
 | Файл | Описание |
 |------|----------|
+| [RUCAPTCHA_GUIDE.md](./RUCAPTCHA_GUIDE.md) | 🔓 **RuCaptcha + Cloudflare Turnstile - обход капчи!** |
+| [HOW_TO_FIND_SITEKEY.md](./HOW_TO_FIND_SITEKEY.md) | 🔍 **8 способов найти Turnstile sitekey** |
 | [CLAUDE_API_WITHOUT_BROWSER.md](./CLAUDE_API_WITHOUT_BROWSER.md) | 🔥 **API без браузера - самый простой способ!** |
 | [BROWSERLESS_HTTP_API.md](./BROWSERLESS_HTTP_API.md) | 🌐 **Browserless HTTP API - 0 зависимостей!** |
 | [BROWSERLESS_GUIDE.md](./BROWSERLESS_GUIDE.md) | 🌐 Browserless + Puppeteer (требует npm) |
@@ -206,6 +245,14 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 | [CLAUDE_EXAMPLES.md](./CLAUDE_EXAMPLES.md) | 10 практических примеров |
 | [PUPPETEER_CODE.md](./PUPPETEER_CODE.md) | Код для Puppeteer node |
 | [CHROME_INSTALL_FIX.md](./CHROME_INSTALL_FIX.md) | Решение проблемы Chrome not found |
+
+## 🛠️ Инструменты и скрипты
+
+| Инструмент | Описание |
+|------------|----------|
+| [extract-turnstile-sitekey.json](./workflows/extract-turnstile-sitekey.json) | 🤖 n8n workflow для автоматического извлечения sitekey |
+| [find_sitekey.py](./scripts/find_sitekey.py) | 🐍 Python скрипт с BeautifulSoup для поиска sitekey |
+| [find-turnstile-sitekey.sh](./scripts/find-turnstile-sitekey.sh) | 📜 Bash скрипт с curl+grep для поиска sitekey |
 
 ## 🎯 Примеры использования
 
