@@ -1,0 +1,205 @@
+{
+  "name": "Extract Sitekey via Browserless.io (Webhook API)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "extract-sitekey-browserless",
+        "method": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "extract-sitekey-browserless",
+      "id": "webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "={{ $json.body.url || $json.query.url || 'https://claude.ai/new' }}",
+              "type": "string"
+            },
+            {
+              "id": "browserlessToken",
+              "name": "browserlessToken",
+              "value": "={{ $json.body.browserlessToken || '2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac' }}",
+              "type": "string"
+            },
+            {
+              "id": "waitTime",
+              "name": "waitTime",
+              "value": "={{ $json.body.waitTime || 5000 }}",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "name": "Extract Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "params"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chrome.browserless.io/function?token={{ $json.browserlessToken }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  url: $json.targetURL,\n  code: `\n    async ({ page, context }) => {\n      const { waitTime } = context;\n      \n      await page.evaluateOnNewDocument(() => {\n        window.captchaData = {};\n        window.captchaIntercepted = false;\n        \n        const checkInterval = setInterval(() => {\n          if (window.turnstile && !window.captchaIntercepted) {\n            clearInterval(checkInterval);\n            window.captchaIntercepted = true;\n            \n            const originalRender = window.turnstile.render;\n            window.turnstile.render = function(container, params) {\n              window.captchaData = {\n                type: 'challenge_page',\n                sitekey: params.sitekey,\n                action: params.action,\n                cData: params.cData,\n                chlPageData: params.chlPageData,\n                intercepted: true,\n                timestamp: new Date().toISOString()\n              };\n              return originalRender.call(this, container, params);\n            };\n          }\n        }, 50);\n      });\n      \n      await page.goto(context.targetURL, { waitUntil: 'networkidle2', timeout: 30000 });\n      await page.waitForTimeout(waitTime);\n      \n      const result = await page.evaluate(() => {\n        const data = {\n          success: false,\n          url: window.location.href,\n          userAgent: navigator.userAgent,\n          timestamp: new Date().toISOString(),\n          captchaType: 'not_found',\n          sitekey: null,\n          turnstileData: null,\n          searchMethods: []\n        };\n        \n        // Method 1: Intercepted data\n        if (window.captchaData && window.captchaData.intercepted && window.captchaData.sitekey) {\n          data.success = true;\n          data.captchaType = 'challenge_page';\n          data.sitekey = window.captchaData.sitekey;\n          data.turnstileData = window.captchaData;\n          data.searchMethods.push('✅ turnstile.render() intercept');\n          return data;\n        }\n        data.searchMethods.push('❌ turnstile.render() not found');\n        \n        // Method 2: DOM selectors\n        const selectors = [\n          '[data-sitekey]',\n          '[sitekey]',\n          'div[class*=\"turnstile\"]',\n          'div[class*=\"cf-turnstile\"]',\n          'iframe[src*=\"challenges.cloudflare.com\"]',\n          'iframe[src*=\"turnstile\"]'\n        ];\n        \n        for (const selector of selectors) {\n          const el = document.querySelector(selector);\n          if (el) {\n            const sk = el.getAttribute('data-sitekey') || el.getAttribute('sitekey');\n            if (sk && sk.length > 10) {\n              data.success = true;\n              data.captchaType = 'standalone';\n              data.sitekey = sk;\n              data.searchMethods.push('✅ selector: ' + selector);\n              return data;\n            }\n            if (el.tagName === 'IFRAME') {\n              const src = el.src;\n              const m = src.match(/sitekey=([^&]+)/);\n              if (m) {\n                data.success = true;\n                data.captchaType = 'standalone_iframe';\n                data.sitekey = m[1];\n                data.searchMethods.push('✅ iframe src');\n                return data;\n              }\n            }\n          }\n        }\n        data.searchMethods.push('❌ selectors not found');\n        \n        // Method 3: HTML regex\n        const html = document.documentElement.innerHTML;\n        const patterns = [\n          /data-sitekey=[\"']([0-9a-zA-Z_-]{10,100})[\"']/,\n          /[\"']sitekey[\"'][\\\\s]*:[\\\\s]*[\"']([0-9a-zA-Z_-]{10,100})[\"']/,\n          /sitekey:[\\\\s]*[\"']([0-9a-zA-Z_-]{10,100})[\"']/\n        ];\n        \n        for (const p of patterns) {\n          const m = html.match(p);\n          if (m && m[1] && m[1].length >= 10) {\n            data.success = true;\n            data.captchaType = 'html_extraction';\n            data.sitekey = m[1];\n            data.searchMethods.push('✅ html regex');\n            return data;\n          }\n        }\n        data.searchMethods.push('❌ html regex not found');\n        \n        // Method 4: Script tags\n        const scripts = document.querySelectorAll('script');\n        for (let i = 0; i < scripts.length; i++) {\n          const txt = scripts[i].textContent;\n          if (txt && (txt.includes('turnstile') || txt.includes('sitekey'))) {\n            const m = txt.match(/[\"']?(0x[0-9a-zA-Z_-]{10,100})[\"']?/);\n            if (m && m[1]) {\n              data.success = true;\n              data.captchaType = 'script_extraction';\n              data.sitekey = m[1];\n              data.searchMethods.push('✅ script tag #' + i);\n              return data;\n            }\n          }\n        }\n        data.searchMethods.push('❌ script tags not found');\n        \n        data.error = 'Cloudflare Turnstile sitekey not found';\n        return data;\n      });\n      \n      return result;\n    }\n  `,\n  context: {\n    waitTime: $json.waitTime,\n    targetURL: $json.targetURL\n  }\n}) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "name": "Browserless Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "extract"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": "={{ $json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "captchaType",
+              "name": "captchaType",
+              "value": "={{ $json.captchaType }}",
+              "type": "string"
+            },
+            {
+              "id": "websiteURL",
+              "name": "websiteURL",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "websiteKey",
+              "name": "websiteKey",
+              "value": "={{ $json.sitekey }}",
+              "type": "string"
+            },
+            {
+              "id": "userAgent",
+              "name": "userAgent",
+              "value": "={{ $json.userAgent }}",
+              "type": "string"
+            },
+            {
+              "id": "action",
+              "name": "action",
+              "value": "={{ $json.turnstileData?.action || null }}",
+              "type": "string"
+            },
+            {
+              "id": "data",
+              "name": "data",
+              "value": "={{ $json.turnstileData?.cData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "pagedata",
+              "name": "pagedata",
+              "value": "={{ $json.turnstileData?.chlPageData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "searchMethods",
+              "name": "searchMethods",
+              "value": "={{ $json.searchMethods }}",
+              "type": "object"
+            },
+            {
+              "id": "rucaptchaPayload",
+              "name": "rucaptchaPayload",
+              "value": "={{ $json.success ? {\n  clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $json.url,\n    websiteKey: $json.sitekey,\n    action: $json.turnstileData?.action,\n    data: $json.turnstileData?.cData,\n    pagedata: $json.turnstileData?.chlPageData\n  }\n} : null }}",
+              "type": "object"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error || null }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Format Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [900, 300],
+      "id": "format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json, null, 2) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "respond"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Extract Parameters", "type": "main", "index": 0}]]
+    },
+    "Extract Parameters": {
+      "main": [[{"node": "Browserless Extract", "type": "main", "index": 0}]]
+    },
+    "Browserless Extract": {
+      "main": [[{"node": "Format Response", "type": "main", "index": 0}]]
+    },
+    "Format Response": {
+      "main": [[{"node": "Respond to Webhook", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["cloudflare", "turnstile", "browserless", "webhook", "api"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T17:50:00.000Z",
+  "versionId": ""
+}

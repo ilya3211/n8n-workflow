@@ -1,0 +1,211 @@
+{
+  "name": "Extract Cloudflare Turnstile Sitekey (Browserless.io)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger",
+      "notes": "Запуск workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            },
+            {
+              "id": "browserlessToken",
+              "name": "browserlessToken",
+              "value": "2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+              "type": "string"
+            },
+            {
+              "id": "waitTime",
+              "name": "waitTime",
+              "value": 5000,
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "name": "⚙️ Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "settings",
+      "notes": "Измените targetURL на нужный сайт\nВаш Browserless.io token уже установлен"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chrome.browserless.io/function?token={{ $json.browserlessToken }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "browserlessApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  url: $json.targetURL,\n  context: {\n    waitTime: $json.waitTime\n  },\n  waitFor: 'networkidle2',\n  timeout: 30000\n}) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "🌐 Browserless - Navigate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "navigate",
+      "notes": "Открывает страницу через Browserless.io"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://chrome.browserless.io/function?token={{ $('⚙️ Settings').item.json.browserlessToken }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  url: $('⚙️ Settings').item.json.targetURL,\n  code: `\n    async ({ page, context }) => {\n      const { waitTime } = context;\n      \n      // Перехват turnstile.render\n      await page.evaluateOnNewDocument(() => {\n        window.captchaData = {};\n        window.captchaIntercepted = false;\n        \n        const checkInterval = setInterval(() => {\n          if (window.turnstile && !window.captchaIntercepted) {\n            clearInterval(checkInterval);\n            window.captchaIntercepted = true;\n            \n            const originalRender = window.turnstile.render;\n            window.turnstile.render = function(container, params) {\n              window.captchaData = {\n                type: 'challenge_page',\n                sitekey: params.sitekey,\n                action: params.action,\n                cData: params.cData,\n                chlPageData: params.chlPageData,\n                intercepted: true\n              };\n              return originalRender.call(this, container, params);\n            };\n          }\n        }, 50);\n      });\n      \n      await page.goto('${$('⚙️ Settings').item.json.targetURL}', { waitUntil: 'networkidle2' });\n      \n      // Ждем загрузки\n      await page.waitForTimeout(waitTime);\n      \n      // Извлекаем данные\n      const result = await page.evaluate(() => {\n        const data = {\n          success: false,\n          url: window.location.href,\n          userAgent: navigator.userAgent,\n          timestamp: new Date().toISOString(),\n          captchaType: 'not_found',\n          sitekey: null,\n          turnstileData: null,\n          methods: []\n        };\n        \n        // Метод 1: Проверка перехваченных данных\n        if (window.captchaData && window.captchaData.intercepted && window.captchaData.sitekey) {\n          data.success = true;\n          data.captchaType = 'challenge_page';\n          data.sitekey = window.captchaData.sitekey;\n          data.turnstileData = window.captchaData;\n          data.methods.push('turnstile.render() intercept');\n          return data;\n        }\n        data.methods.push('turnstile.render() - not found');\n        \n        // Метод 2: Поиск по селекторам\n        const selectors = [\n          '[data-sitekey]',\n          '[sitekey]',\n          'div[class*=\"turnstile\"]',\n          'iframe[src*=\"challenges.cloudflare.com\"]'\n        ];\n        \n        for (const selector of selectors) {\n          const element = document.querySelector(selector);\n          if (element) {\n            const sitekey = element.getAttribute('data-sitekey') || element.getAttribute('sitekey');\n            if (sitekey && sitekey.length > 10) {\n              data.success = true;\n              data.captchaType = 'standalone';\n              data.sitekey = sitekey;\n              data.methods.push('selector: ' + selector);\n              return data;\n            }\n            \n            if (element.tagName === 'IFRAME') {\n              const src = element.getAttribute('src');\n              const match = src ? src.match(/sitekey=([^&]+)/) : null;\n              if (match) {\n                data.success = true;\n                data.captchaType = 'standalone_iframe';\n                data.sitekey = match[1];\n                data.methods.push('iframe src');\n                return data;\n              }\n            }\n          }\n        }\n        data.methods.push('selectors - not found');\n        \n        // Метод 3: Поиск в HTML\n        const html = document.documentElement.innerHTML;\n        const patterns = [\n          /data-sitekey=[\"']([0-9a-zA-Z_-]{10,100})[\"']/,\n          /[\"']sitekey[\"'][\\\\s]*:[\\\\s]*[\"']([0-9a-zA-Z_-]{10,100})[\"']/\n        ];\n        \n        for (const pattern of patterns) {\n          const match = html.match(pattern);\n          if (match && match[1]) {\n            data.success = true;\n            data.captchaType = 'html_extraction';\n            data.sitekey = match[1];\n            data.methods.push('html regex');\n            return data;\n          }\n        }\n        data.methods.push('html regex - not found');\n        \n        data.error = 'Sitekey not found';\n        return data;\n      });\n      \n      return result;\n    }\n  `,\n  context: {\n    waitTime: $('⚙️ Settings').item.json.waitTime\n  }\n}) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "name": "🔍 Browserless - Extract Sitekey",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "id": "extract",
+      "notes": "Выполняет JavaScript на странице для извлечения sitekey"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "✅ success",
+              "value": "={{ $json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "captcha_type",
+              "name": "📋 captchaType",
+              "value": "={{ $json.captchaType }}",
+              "type": "string"
+            },
+            {
+              "id": "website_url",
+              "name": "🌐 websiteURL",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "sitekey",
+              "name": "🔑 websiteKey (SITEKEY)",
+              "value": "={{ $json.sitekey }}",
+              "type": "string"
+            },
+            {
+              "id": "user_agent",
+              "name": "🖥️ userAgent",
+              "value": "={{ $json.userAgent }}",
+              "type": "string"
+            },
+            {
+              "id": "action",
+              "name": "⚡ action",
+              "value": "={{ $json.turnstileData?.action || null }}",
+              "type": "string"
+            },
+            {
+              "id": "data",
+              "name": "📦 data",
+              "value": "={{ $json.turnstileData?.cData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "pagedata",
+              "name": "📄 pagedata",
+              "value": "={{ $json.turnstileData?.chlPageData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "methods",
+              "name": "🔍 methods",
+              "value": "={{ JSON.stringify($json.methods || []) }}",
+              "type": "string"
+            },
+            {
+              "id": "rucaptcha_payload",
+              "name": "🤖 RuCaptcha API Request",
+              "value": "={{ $json.success ? JSON.stringify({\n  clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $json.url,\n    websiteKey: $json.sitekey,\n    action: $json.turnstileData?.action,\n    data: $json.turnstileData?.cData,\n    pagedata: $json.turnstileData?.chlPageData\n  }\n}, null, 2) : 'N/A - Sitekey not found' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "⏰ timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "error",
+              "name": "❌ error",
+              "value": "={{ $json.error || null }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "📊 Final Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1120, 300],
+      "id": "result",
+      "notes": "Форматированный результат с sitekey и готовым payload для RuCaptcha"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "⚙️ Settings", "type": "main", "index": 0}]]
+    },
+    "⚙️ Settings": {
+      "main": [[{"node": "🔍 Browserless - Extract Sitekey", "type": "main", "index": 0}]]
+    },
+    "🔍 Browserless - Extract Sitekey": {
+      "main": [[{"node": "📊 Final Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["cloudflare", "turnstile", "browserless", "sitekey"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T17:45:00.000Z",
+  "versionId": ""
+}
