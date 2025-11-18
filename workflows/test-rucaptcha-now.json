@@ -1,0 +1,74 @@
+{
+  "name": "Test RuCaptcha Simple",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/createTask",
+        "authentication": "none",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"clientKey\": \"5fffba5de3bed2317417f625985ec684\", \"task\": {\"type\": \"TurnstileTaskProxyless\", \"websiteURL\": \"https://rucaptcha.com/demo/cloudflare-turnstile\", \"websiteKey\": \"0x4AAAAAAADnPIDROzbs0Qj\"}} }}",
+        "options": {}
+      },
+      "id": "b1",
+      "name": "RuCaptcha Create",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "amount": 8
+      },
+      "id": "c1",
+      "name": "Wait 8 sec",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [680, 300],
+      "webhookId": "wait-8sec"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/getTaskResult",
+        "authentication": "none",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\"clientKey\": \"5fffba5de3bed2317417f625985ec684\", \"taskId\": $('RuCaptcha Create').item.json.taskId} }}",
+        "options": {}
+      },
+      "id": "d1",
+      "name": "Get Solution",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [[{"node": "RuCaptcha Create", "type": "main", "index": 0}]]
+    },
+    "RuCaptcha Create": {
+      "main": [[{"node": "Wait 8 sec", "type": "main", "index": 0}]]
+    },
+    "Wait 8 sec": {
+      "main": [[{"node": "Get Solution", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
