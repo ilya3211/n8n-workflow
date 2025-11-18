@@ -1,10 +1,37 @@
 # 🤖 n8n Claude.AI Automation Workflows
 
-Коллекция рабочих workflows для автоматизации с Claude.ai через n8n и Puppeteer.
+Коллекция рабочих workflows для автоматизации с Claude.ai через n8n.
 
 ## 🚀 Быстрый импорт
 
-### 🌟 n8n-nodes-puppeteer (визуальный подход) - ПРОЩЕ ВСЕГО!
+### ⚡ Claude API (БЕЗ БРАУЗЕРА) - САМЫЙ ПРОСТОЙ! 🔥
+
+**Импорт через URL:**
+
+```
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-api-direct.json
+```
+
+**Как использовать:**
+1. n8n → Workflows → "+" → **Import from URL**
+2. Вставьте URL выше
+3. Import → Workflow загружен ✅
+4. Откройте ноду **"Claude API Request"**
+5. Замените `YOUR_CLAUDE_API_KEY_HERE` на ваш API ключ
+6. Execute Workflow → Test!
+
+**Преимущества:**
+- ✅ **НЕ НУЖЕН Chrome/Chromium!**
+- ✅ Скорость: **1-3 сек** vs 10-30 сек с браузером
+- ✅ Надежность: официальный API
+- ✅ Минимум ресурсов
+- ✅ Работает всегда
+
+📖 [Полное руководство по Claude API](./CLAUDE_API_WITHOUT_BROWSER.md)
+
+---
+
+### 🌟 n8n-nodes-puppeteer (визуальный подход с браузером)
 
 **Импорт через URL:**
 
@@ -125,6 +152,7 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 
 | Файл | Описание |
 |------|----------|
+| [CLAUDE_API_WITHOUT_BROWSER.md](./CLAUDE_API_WITHOUT_BROWSER.md) | 🔥 **API без браузера - самый простой способ!** |
 | [QUICK_START.md](./QUICK_START.md) | Быстрый старт за 5 минут |
 | [INSTALLATION.md](./INSTALLATION.md) | Подробная инструкция по установке |
 | [READY_TO_USE.md](./READY_TO_USE.md) | Гайд по FULL READY версии |
