@@ -1,0 +1,178 @@
+{
+  "name": "Extract Cloudflare Turnstile Sitekey (Browserless Working)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            },
+            {
+              "id": "waitTime",
+              "name": "waitTime",
+              "value": 5000,
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "name": "⚙️ Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "settings",
+      "notes": "Измените targetURL на нужный сайт\nwaitTime - время ожидания капчи (мс)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/function?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  code: `module.exports = async ({ page, context }) => {\n    const { targetURL, waitTime } = context;\n    \n    try {\n      // Перехват turnstile.render для Challenge Pages\n      await page.evaluateOnNewDocument(() => {\n        window.captchaData = {};\n        window.captchaIntercepted = false;\n        \n        const checkInterval = setInterval(() => {\n          if (window.turnstile && !window.captchaIntercepted) {\n            clearInterval(checkInterval);\n            window.captchaIntercepted = true;\n            \n            const originalRender = window.turnstile.render;\n            window.turnstile.render = function(container, params) {\n              window.captchaData = {\n                type: 'challenge_page',\n                sitekey: params.sitekey,\n                action: params.action,\n                cData: params.cData,\n                chlPageData: params.chlPageData,\n                intercepted: true\n              };\n              return originalRender.call(this, container, params);\n            };\n          }\n        }, 50);\n      });\n      \n      // Переход на страницу\n      await page.goto(targetURL, { \n        waitUntil: 'networkidle2',\n        timeout: 30000 \n      });\n      \n      // Ожидание загрузки капчи\n      await page.waitForTimeout(waitTime);\n      \n      // Извлечение sitekey\n      const result = await page.evaluate(() => {\n        const data = {\n          success: false,\n          url: window.location.href,\n          userAgent: navigator.userAgent,\n          timestamp: new Date().toISOString(),\n          captchaType: 'not_found',\n          sitekey: null,\n          turnstileData: null,\n          searchMethods: []\n        };\n        \n        // Метод 1: Перехваченные данные (Challenge Page)\n        if (window.captchaData && window.captchaData.intercepted && window.captchaData.sitekey) {\n          data.success = true;\n          data.captchaType = 'challenge_page';\n          data.sitekey = window.captchaData.sitekey;\n          data.turnstileData = window.captchaData;\n          data.searchMethods.push('✅ turnstile.render() intercept');\n          return data;\n        }\n        data.searchMethods.push('❌ turnstile.render()  - not found');\n        \n        // Метод 2: Поиск по селекторам (Standalone Captcha)\n        const selectors = [\n          '[data-sitekey]',\n          '[sitekey]',\n          'div[class*=\\\"turnstile\\\"]',\n          'div[class*=\\\"cf-turnstile\\\"]',\n          'div[id*=\\\"turnstile\\\"]',\n          'iframe[src*=\\\"challenges.cloudflare.com\\\"]',\n          'iframe[src*=\\\"turnstile\\\"]'\n        ];\n        \n        for (const selector of selectors) {\n          try {\n            const el = document.querySelector(selector);\n            if (el) {\n              const sk = el.getAttribute('data-sitekey') || el.getAttribute('sitekey');\n              if (sk && sk.length > 10) {\n                data.success = true;\n                data.captchaType = 'standalone';\n                data.sitekey = sk;\n                data.searchMethods.push('✅ selector: ' + selector);\n                return data;\n              }\n              \n              if (el.tagName === 'IFRAME') {\n                const src = el.getAttribute('src');\n                if (src) {\n                  const m = src.match(/[?&]sitekey=([^&]+)/);\n                  if (m && m[1]) {\n                    data.success = true;\n                    data.captchaType = 'standalone_iframe';\n                    data.sitekey = m[1];\n                    data.searchMethods.push('✅ iframe src: ' + selector);\n                    return data;\n                  }\n                }\n              }\n            }\n          } catch (e) {\n            data.searchMethods.push('⚠️ ' + selector + ': ' + e.message);\n          }\n        }\n        data.searchMethods.push('❌ selectors - not found');\n        \n        // Метод 3: HTML regex поиск\n        const html = document.documentElement.innerHTML;\n        const patterns = [\n          { name: 'data-sitekey', regex: /data-sitekey=[\\\"']([0-9a-zA-Z_-]{10,100})[\\\"']/ },\n          { name: 'sitekey prop', regex: /[\\\"']sitekey[\\\"'][\\\\s]*:[\\\\s]*[\\\"']([0-9a-zA-Z_-]{10,100})[\\\"']/ },\n          { name: '0x pattern', regex: /[\\\"'](0x[0-9a-zA-Z_-]{10,100})[\\\"']/ }\n        ];\n        \n        for (const p of patterns) {\n          const m = html.match(p.regex);\n          if (m && m[1] && m[1].length >= 10) {\n            data.success = true;\n            data.captchaType = 'html_extraction';\n            data.sitekey = m[1];\n            data.searchMethods.push('✅ html regex: ' + p.name);\n            return data;\n          }\n        }\n        data.searchMethods.push('❌ html regex - not found');\n        \n        // Метод 4: Script tags\n        const scripts = document.querySelectorAll('script');\n        for (let i = 0; i < scripts.length; i++) {\n          const txt = scripts[i].textContent || scripts[i].innerHTML;\n          if (txt && (txt.includes('turnstile') || txt.includes('sitekey'))) {\n            const m = txt.match(/[\\\"']?(0x[0-9a-zA-Z_-]{10,100})[\\\"']?/);\n            if (m && m[1]) {\n              data.success = true;\n              data.captchaType = 'script_extraction';\n              data.sitekey = m[1];\n              data.searchMethods.push('✅ script tag #' + i);\n              return data;\n            }\n          }\n        }\n        data.searchMethods.push('❌ script tags - not found');\n        \n        data.error = 'Cloudflare Turnstile sitekey not found on page';\n        data.suggestion = 'Try increasing waitTime or check if page uses Turnstile';\n        return data;\n      });\n      \n      return { data: result };\n      \n    } catch (error) {\n      return { \n        data: {\n          success: false,\n          error: error.message,\n          stack: error.stack,\n          url: targetURL\n        }\n      };\n    }\n  };`,\n  context: {\n    targetURL: $('⚙️ Settings').item.json.targetURL,\n    waitTime: $('⚙️ Settings').item.json.waitTime\n  }\n}) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "name": "🌐 Browserless Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "extract",
+      "notes": "Выполняет извлечение sitekey через Browserless.io"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "✅ success",
+              "value": "={{ $json.data.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "sitekey",
+              "name": "🔑 websiteKey",
+              "value": "={{ $json.data.sitekey }}",
+              "type": "string"
+            },
+            {
+              "id": "url",
+              "name": "🌐 websiteURL",
+              "value": "={{ $json.data.url }}",
+              "type": "string"
+            },
+            {
+              "id": "type",
+              "name": "📋 captchaType",
+              "value": "={{ $json.data.captchaType }}",
+              "type": "string"
+            },
+            {
+              "id": "userAgent",
+              "name": "🖥️ userAgent",
+              "value": "={{ $json.data.userAgent }}",
+              "type": "string"
+            },
+            {
+              "id": "methods",
+              "name": "🔍 searchMethods",
+              "value": "={{ JSON.stringify($json.data.searchMethods, null, 2) }}",
+              "type": "string"
+            },
+            {
+              "id": "action",
+              "name": "⚡ action",
+              "value": "={{ $json.data.turnstileData?.action || null }}",
+              "type": "string"
+            },
+            {
+              "id": "data_param",
+              "name": "📦 data",
+              "value": "={{ $json.data.turnstileData?.cData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "pagedata",
+              "name": "📄 pagedata",
+              "value": "={{ $json.data.turnstileData?.chlPageData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "rucaptcha",
+              "name": "🤖 RuCaptcha Payload",
+              "value": "={{ $json.data.success ? JSON.stringify({\n  clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $json.data.url,\n    websiteKey: $json.data.sitekey,\n    action: $json.data.turnstileData?.action,\n    data: $json.data.turnstileData?.cData,\n    pagedata: $json.data.turnstileData?.chlPageData\n  }\n}, null, 2) : 'N/A - Sitekey not found' }}",
+              "type": "string"
+            },
+            {
+              "id": "error",
+              "name": "❌ error",
+              "value": "={{ $json.data.error || null }}",
+              "type": "string"
+            },
+            {
+              "id": "suggestion",
+              "name": "💡 suggestion",
+              "value": "={{ $json.data.suggestion || null }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "⏰ timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "📊 Final Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [900, 300],
+      "id": "result",
+      "notes": "Результат:\n- websiteKey - sitekey капчи\n- RuCaptcha Payload - готовый JSON для API\n- searchMethods - лог поиска"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "⚙️ Settings", "type": "main", "index": 0}]]
+    },
+    "⚙️ Settings": {
+      "main": [[{"node": "🌐 Browserless Extract", "type": "main", "index": 0}]]
+    },
+    "🌐 Browserless Extract": {
+      "main": [[{"node": "📊 Final Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["browserless", "turnstile", "cloudflare", "sitekey"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T18:15:00.000Z",
+  "versionId": ""
+}
