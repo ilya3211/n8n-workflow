@@ -7,52 +7,72 @@
 
 ## 🚀 Быстрый импорт workflows
 
-### Google AI Studio Automation (Browserless)
+### Google AI Studio Automation (Browserless) ⭐
 
-Автоматизация работы с Google AI Studio через browserless и Puppeteer.
+Автоматизация работы с Google AI Studio через browserless.io и Puppeteer с авторизацией через cookies.
 
-#### ⚠️ Важно: Есть проблема с Puppeteer нодой?
+#### ⚠️ Проблемы с импортом?
 
-Если вы видите ошибку `"Unrecognized node type: n8n-nodes-base.puppeteer"`:
+Если вы видите ошибку `"Problem loading workflow. The URL does not point to valid JSON file!"`:
 
-👉 **Используйте HTTP API версию** (работает на любом n8n):
-```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-http-api.json
-```
+👉 **См. подробное руководство:** [IMPORT_GUIDE.md](IMPORT_GUIDE.md)
 
-📖 Подробное решение: [TROUBLESHOOTING_PUPPETEER.md](TROUBLESHOOTING_PUPPETEER.md)
+**Краткое решение:** Скачайте JSON файл из папки `workflows/` и импортируйте через **Import from File** в n8n.
 
 ---
 
-#### Импорт через URL в n8n:
+#### Рекомендуемые workflows:
 
-**HTTP API версия (Рекомендуется - без Puppeteer ноды):**
+**1. Полная автоматизация с авторизацией (РЕКОМЕНДУЕТСЯ):**
+- Файл: `workflows/google-ai-studio-full-working.json`
+- Что делает: Авторизация + отправка промпта + получение ответа + скриншот
+- URL для импорта:
 ```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-http-api.json
-```
-
-**Базовая версия (требует Puppeteer ноду):**
-```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-automation.json
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-full-working.json
 ```
 
-**Продвинутая версия (требует Puppeteer ноду):**
+**2. Тест авторизации с cookies:**
+- Файл: `workflows/google-ai-studio-test-with-cookies.json`
+- Что делает: Проверка авторизации через скриншот
+- URL для импорта:
 ```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-advanced.json
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-test-with-cookies.json
 ```
 
-#### Документация:
+**3. Универсальный workflow с параметрами:**
+- Файл: `workflows/google-ai-studio-browserless-with-auth.json`
+- Что делает: Передача cookies через параметры запроса
+- URL для импорта:
 ```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/GOOGLE_AI_STUDIO_AUTOMATION_README.md
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-with-auth.json
 ```
+
+**4. Базовый workflow без авторизации:**
+- Файл: `workflows/google-ai-studio-browserless-correct.json`
+- Что делает: Простое открытие страницы и скриншот
+- URL для импорта:
+```
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-correct.json
+```
+
+---
 
 ### Как импортировать в n8n:
 
+**Способ 1: Через URL (может не работать)**
 1. Откройте n8n
 2. Нажмите **Workflows → Import from URL**
 3. Вставьте одну из ссылок выше
 4. Нажмите **Import**
-5. Активируйте workflow
+
+**Способ 2: Через файл (РЕКОМЕНДУЕТСЯ)**
+1. Скачайте нужный `.json` файл из папки `workflows/`
+2. Откройте n8n
+3. Нажмите **Workflows → Import from File**
+4. Выберите скачанный файл
+5. Нажмите **Import**
+
+📖 **Подробная инструкция:** [IMPORT_GUIDE.md](IMPORT_GUIDE.md)
 
 ### Другие workflows:
 
@@ -64,8 +84,11 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-a
 
 ## 📚 Дополнительная документация
 
+- **[IMPORT_GUIDE.md](IMPORT_GUIDE.md)** ⭐ - Подробное руководство по импорту workflows
+- **[HOW_TO_GET_GOOGLE_COOKIES.md](HOW_TO_GET_GOOGLE_COOKIES.md)** - Как получить cookies для авторизации
 - **[USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)** - Готовые примеры использования для вашего домена
 - **[READY_TO_USE_COMMANDS.sh](READY_TO_USE_COMMANDS.sh)** - Shell скрипт с готовыми командами
+- **[TROUBLESHOOTING_PUPPETEER.md](TROUBLESHOOTING_PUPPETEER.md)** - Решение проблем с Puppeteer
 - **[IMPORT_URLS.md](IMPORT_URLS.md)** - Подробная инструкция по импорту
 - **[workflows-index.json](workflows-index.json)** - Индекс всех workflows с метаданными
 
@@ -77,29 +100,50 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-a
 
 ### Webhook URLs:
 
-**HTTP API версия (Рекомендуется):**
+**Полная автоматизация (с авторизацией):**
 ```
-https://jejopeguki.beget.app/webhook/ai-studio-http
-```
-
-**Базовая версия:**
-```
-https://jejopeguki.beget.app/webhook/ai-studio-automation
+https://jejopeguki.beget.app/webhook/ai-studio-full-auth
 ```
 
-**Продвинутая версия:**
+**Универсальный (передача cookies в параметрах):**
 ```
-https://jejopeguki.beget.app/webhook/ai-studio-advanced
+https://jejopeguki.beget.app/webhook/ai-studio-auth
 ```
 
-### Быстрый тест (HTTP API версия):
+**Базовый (без авторизации):**
+```
+https://jejopeguki.beget.app/webhook/ai-studio-correct
+```
 
+### Быстрый тест:
+
+**Полная автоматизация (требует обновления cookies в workflow):**
 ```bash
-curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-http \
+curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-full-auth \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "Привет! Расскажи о последних новостях в AI"
+    "prompt": "Расскажи кратко о квантовых компьютерах"
   }'
 ```
 
-Подробные примеры смотрите в [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)
+**Универсальный (с передачей cookies):**
+```bash
+curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-auth \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Привет!",
+    "googleCookies": "[{\"name\":\"session\",\"value\":\"YOUR_SESSION_COOKIE\"}]"
+  }'
+```
+
+**Базовый тест (без авторизации):**
+```bash
+curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-correct \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Test"
+  }'
+```
+
+📖 Подробные примеры смотрите в [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)
+📖 Как получить cookies: [HOW_TO_GET_GOOGLE_COOKIES.md](HOW_TO_GET_GOOGLE_COOKIES.md)
