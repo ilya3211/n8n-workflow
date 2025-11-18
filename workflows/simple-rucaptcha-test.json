@@ -1,0 +1,101 @@
+{
+  "name": "Simple RuCaptcha Test",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{\n  json: {\n    clientKey: '5fffba5de3bed2317417f625985ec684',\n    task: {\n      type: 'TurnstileTaskProxyless',\n      websiteURL: 'https://rucaptcha.com/demo/cloudflare-turnstile',\n      websiteKey: '0x4AAAAAAADnPIDROzbs0Qj'\n    }\n  }\n}];"
+      },
+      "id": "b1",
+      "name": "Prepare Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/createTask",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "c1",
+      "name": "Create Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "amount": 8,
+        "unit": "seconds"
+      },
+      "id": "d1",
+      "name": "Wait 8s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [900, 300],
+      "webhookId": "wait-8s-hook"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const taskId = $('Create Task').item.json.taskId;\n\nreturn [{\n  json: {\n    clientKey: '5fffba5de3bed2317417f625985ec684',\n    taskId: taskId\n  }\n}];"
+      },
+      "id": "e1",
+      "name": "Prepare Get Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/getTaskResult",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "f1",
+      "name": "Get Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [[{"node": "Prepare Data", "type": "main", "index": 0}]]
+    },
+    "Prepare Data": {
+      "main": [[{"node": "Create Task", "type": "main", "index": 0}]]
+    },
+    "Create Task": {
+      "main": [[{"node": "Wait 8s", "type": "main", "index": 0}]]
+    },
+    "Wait 8s": {
+      "main": [[{"node": "Prepare Get Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Get Request": {
+      "main": [[{"node": "Get Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
