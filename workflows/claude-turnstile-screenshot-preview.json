@@ -1,0 +1,199 @@
+{
+  "name": "Claude Turnstile with Screenshot Preview",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-v5",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "token",
+              "name": "browserlessToken",
+              "value": "={{ $env.BROWSERLESS_TOKEN || 'YOUR_TOKEN_HERE' }}",
+              "type": "string"
+            },
+            {
+              "id": "url",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            },
+            {
+              "id": "wait",
+              "name": "waitTime",
+              "value": "5000",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "config-v5",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const code = [\n'export default async ({ page, context }) => {',\n'  const { targetURL, waitTime } = context;',\n'  try {',\n'    let capturedData = null;',\n'    await page.evaluateOnNewDocument(() => {',\n'      window.__turnstileData = null;',\n'      Object.defineProperty(window, \"turnstile\", {',\n'        value: new Proxy({}, {',\n'          get(target, prop) {',\n'            if (prop === \"render\") {',\n'              return function(container, params) {',\n'                window.__turnstileData = {',\n'                  sitekey: params.sitekey || params[\"site-key\"],',\n'                  action: params.action,',\n'                  cData: params.cData || params[\"c-data\"],',\n'                  chlPageData: params.chlPageData || params[\"chl-page-data\"]',\n'                };',\n'                return \"widget-id\";',\n'              };',\n'            }',\n'            return target[prop];',\n'          }',\n'        }),',\n'        configurable: false',\n'      });',\n'    });',\n'    await page.goto(targetURL, { waitUntil: \"networkidle2\", timeout: 30000 });',\n'    await new Promise(resolve => setTimeout(resolve, waitTime));',\n'    ',\n'    const screenshot = await page.screenshot({ ',\n'      encoding: \"base64\",',\n'      fullPage: false,',\n'      type: \"png\"',\n'    });',\n'    ',\n'    capturedData = await page.evaluate(() => window.__turnstileData);',\n'    if (!capturedData || !capturedData.sitekey) {',\n'      const content = await page.content();',\n'      const match = content.match(/sitekey[\\\\\\\\\"\\':s]+(6[a-zA-Z0-9_-]{39,})/i);',\n'      if (match) capturedData = { sitekey: match[1], action: \"login\" };',\n'    }',\n'    if (!capturedData || !capturedData.sitekey) {',\n'      throw new Error(\"No sitekey found\");',\n'    }',\n'    return {',\n'      success: true,',\n'      data: {',\n'        sitekey: capturedData.sitekey,',\n'        action: capturedData.action || \"login\",',\n'        pageurl: targetURL,',\n'        cData: capturedData.cData,',\n'        chlPageData: capturedData.chlPageData,',\n'        screenshot: screenshot,',\n'        rucaptcha: {',\n'          method: \"turnstile\",',\n'          sitekey: capturedData.sitekey,',\n'          pageurl: targetURL,',\n'          action: capturedData.action || \"login\",',\n'          json: 1',\n'        }',\n'      }',\n'    };',\n'  } catch (err) {',\n'    return { success: false, error: err.message };',\n'  }',\n'};'\n].join('\\n');\n\nconst requestBody = {\n  code: code,\n  context: {\n    targetURL: $input.item.json.targetURL,\n    waitTime: $input.item.json.waitTime\n  }\n};\n\nreturn { \n  json: { \n    requestBody: requestBody,\n    token: $input.item.json.browserlessToken \n  } \n};"
+      },
+      "id": "prepare-v5",
+      "name": "Prepare Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://production-sfo.browserless.io/function?token={{ $json.token }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "id": "http-v5",
+      "name": "Call Browserless",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success-check",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-v5",
+      "name": "Check Result",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const base64Screenshot = $input.item.json.data.screenshot;\nconst buffer = Buffer.from(base64Screenshot, 'base64');\n\nconst binaryData = await this.helpers.prepareBinaryData(\n  buffer,\n  'screenshot.png',\n  'image/png'\n);\n\nreturn {\n  json: {\n    sitekey: $input.item.json.data.sitekey,\n    action: $input.item.json.data.action,\n    pageurl: $input.item.json.data.pageurl,\n    cData: $input.item.json.data.cData,\n    chlPageData: $input.item.json.data.chlPageData,\n    rucaptcha_request: $input.item.json.data.rucaptcha\n  },\n  binary: {\n    screenshot: binaryData\n  }\n};"
+      },
+      "id": "convert-v5",
+      "name": "Convert Screenshot to Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "err1",
+              "name": "error",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "error-v5",
+      "name": "Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 400]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Prepare Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Code": {
+      "main": [
+        [
+          {
+            "node": "Call Browserless",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Browserless": {
+      "main": [
+        [
+          {
+            "node": "Check Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Result": {
+      "main": [
+        [
+          {
+            "node": "Convert Screenshot to Binary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "v5"
+}
