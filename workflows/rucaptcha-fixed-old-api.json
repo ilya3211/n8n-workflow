@@ -1,0 +1,197 @@
+{
+  "name": "✅ RuCaptcha - ИСПРАВЛЕНО (старый API)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-trigger",
+      "name": "▶️ START",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "apiKey",
+              "value": "5fffba5de3bed2317417f625985ec684"
+            },
+            {
+              "name": "googleKey",
+              "value": "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-"
+            },
+            {
+              "name": "pageUrl",
+              "value": "https://www.google.com/recaptcha/api2/demo"
+            }
+          ]
+        }
+      },
+      "id": "config",
+      "name": "⚙️ Настройки",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://rucaptcha.com/in.php?key={{ $json.apiKey }}&method=userrecaptcha&googlekey={{ $json.googleKey }}&pageurl={{ $json.pageUrl }}",
+        "options": {}
+      },
+      "id": "create-task",
+      "name": "1️⃣ Создать задачу (GET)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data }}",
+              "operation": "contains",
+              "value2": "OK|"
+            }
+          ]
+        }
+      },
+      "id": "check-ok",
+      "name": "✅ OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json.data;\nconst taskId = response.split('|')[1];\n\nreturn {\n  json: {\n    taskId: taskId,\n    apiKey: $('⚙️ Настройки').item.json.apiKey\n  }\n};"
+      },
+      "id": "extract-task-id",
+      "name": "📝 Извлечь Task ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 500]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-5s",
+      "name": "⏱️ Ждем 5 сек",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1340, 500],
+      "webhookId": "wait-5sec-hook"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://rucaptcha.com/res.php?key={{ $json.apiKey }}&action=get&id={{ $json.taskId }}",
+        "options": {}
+      },
+      "id": "get-result",
+      "name": "2️⃣ Получить результат",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1560, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.data }}",
+              "operation": "contains",
+              "value2": "CAPCHA_NOT_READY"
+            }
+          ]
+        }
+      },
+      "id": "check-ready",
+      "name": "❓ Еще не готово?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1780, 500]
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "id": "wait-3s",
+      "name": "⏱️ Ждем еще 3 сек",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2000, 400],
+      "webhookId": "wait-3sec-hook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json.data;\nconst solution = response.split('|')[1];\n\nreturn {\n  json: {\n    success: true,\n    captcha_solution: solution,\n    message: \"Капча успешно решена!\"\n  }\n};"
+      },
+      "id": "format-success",
+      "name": "🎉 УСПЕХ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 600]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\n  \"success\": false,\n  \"error\": $json.data,\n  \"message\": \"Ошибка создания задачи\"\n} }}"
+      },
+      "id": "error-output",
+      "name": "❌ ОШИБКА",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "▶️ START": {
+      "main": [[{"node": "⚙️ Настройки", "type": "main", "index": 0}]]
+    },
+    "⚙️ Настройки": {
+      "main": [[{"node": "1️⃣ Создать задачу (GET)", "type": "main", "index": 0}]]
+    },
+    "1️⃣ Создать задачу (GET)": {
+      "main": [[{"node": "✅ OK?", "type": "main", "index": 0}]]
+    },
+    "✅ OK?": {
+      "main": [
+        [{"node": "❌ ОШИБКА", "type": "main", "index": 0}],
+        [{"node": "📝 Извлечь Task ID", "type": "main", "index": 0}]
+      ]
+    },
+    "📝 Извлечь Task ID": {
+      "main": [[{"node": "⏱️ Ждем 5 сек", "type": "main", "index": 0}]]
+    },
+    "⏱️ Ждем 5 сек": {
+      "main": [[{"node": "2️⃣ Получить результат", "type": "main", "index": 0}]]
+    },
+    "2️⃣ Получить результат": {
+      "main": [[{"node": "❓ Еще не готово?", "type": "main", "index": 0}]]
+    },
+    "❓ Еще не готово?": {
+      "main": [
+        [{"node": "⏱️ Ждем еще 3 сек", "type": "main", "index": 0}],
+        [{"node": "🎉 УСПЕХ", "type": "main", "index": 0}]
+      ]
+    },
+    "⏱️ Ждем еще 3 сек": {
+      "main": [[{"node": "2️⃣ Получить результат", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
