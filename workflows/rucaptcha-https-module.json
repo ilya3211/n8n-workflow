@@ -1,0 +1,36 @@
+{
+  "name": "RuCaptcha via HTTPS Module",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const https = require('https');\n\nconst requestBody = JSON.stringify({\n  clientKey: '5fffba5de3bed2317417f625985ec684',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: 'https://rucaptcha.com/demo/cloudflare-turnstile',\n    websiteKey: '0x4AAAAAAADnPIDROzbs0Qj'\n  }\n});\n\nconst options = {\n  hostname: 'api.rucaptcha.com',\n  port: 443,\n  path: '/createTask',\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    'Content-Length': Buffer.byteLength(requestBody)\n  }\n};\n\nreturn new Promise((resolve, reject) => {\n  const req = https.request(options, (res) => {\n    let data = '';\n    \n    res.on('data', (chunk) => {\n      data += chunk;\n    });\n    \n    res.on('end', () => {\n      try {\n        const jsonData = JSON.parse(data);\n        resolve([{json: jsonData}]);\n      } catch (e) {\n        resolve([{json: {error: 'Parse error', raw: data}}]);\n      }\n    });\n  });\n  \n  req.on('error', (error) => {\n    resolve([{json: {error: error.message}}]);\n  });\n  \n  req.write(requestBody);\n  req.end();\n});"
+      },
+      "id": "code",
+      "name": "Create Task",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [[{"node": "Create Task", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
