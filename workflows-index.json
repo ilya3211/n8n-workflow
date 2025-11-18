@@ -124,14 +124,21 @@
     "advanced_workflow": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-advanced.json",
     "documentation": "https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/GOOGLE_AI_STUDIO_AUTOMATION_README.md"
   },
+  "n8n_instance": {
+    "url": "https://jejopeguki.beget.app",
+    "basic_webhook": "https://jejopeguki.beget.app/webhook/ai-studio-automation",
+    "advanced_webhook": "https://jejopeguki.beget.app/webhook/ai-studio-advanced"
+  },
   "examples": {
     "basic_usage": {
-      "curl": "curl -X POST http://your-n8n/webhook/ai-studio-automation -H 'Content-Type: application/json' -d '{\"prompt\": \"Расскажи о квантовых компьютерах\"}'",
-      "javascript": "fetch('http://your-n8n/webhook/ai-studio-automation', {\n  method: 'POST',\n  headers: {'Content-Type': 'application/json'},\n  body: JSON.stringify({prompt: 'Расскажи о квантовых компьютерах'})\n})"
+      "curl": "curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-automation -H 'Content-Type: application/json' -d '{\"prompt\": \"Расскажи о квантовых компьютерах\"}'",
+      "javascript": "fetch('https://jejopeguki.beget.app/webhook/ai-studio-automation', {\n  method: 'POST',\n  headers: {'Content-Type': 'application/json'},\n  body: JSON.stringify({prompt: 'Расскажи о квантовых компьютерах'})\n})",
+      "python": "import requests\n\nurl = 'https://jejopeguki.beget.app/webhook/ai-studio-automation'\npayload = {'prompt': 'Расскажи о квантовых компьютерах'}\nresponse = requests.post(url, json=payload)\nprint(response.json())"
     },
     "advanced_usage": {
-      "curl": "curl -X POST http://your-n8n/webhook/ai-studio-advanced -H 'Content-Type: application/json' -d '{\"prompt\": \"Создай план статьи о нейросетях\", \"model\": \"gemini-2.0-flash-exp\", \"temperature\": 0.7, \"maxTokens\": 4096}'",
-      "javascript": "fetch('http://your-n8n/webhook/ai-studio-advanced', {\n  method: 'POST',\n  headers: {'Content-Type': 'application/json'},\n  body: JSON.stringify({\n    prompt: 'Создай план статьи о нейросетях',\n    model: 'gemini-2.0-flash-exp',\n    temperature: 0.7,\n    maxTokens: 4096,\n    saveHistory: true\n  })\n})"
+      "curl": "curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-advanced -H 'Content-Type: application/json' -d '{\"prompt\": \"Создай план статьи о нейросетях\", \"model\": \"gemini-2.0-flash-exp\", \"temperature\": 0.7, \"maxTokens\": 4096}'",
+      "javascript": "fetch('https://jejopeguki.beget.app/webhook/ai-studio-advanced', {\n  method: 'POST',\n  headers: {'Content-Type': 'application/json'},\n  body: JSON.stringify({\n    prompt: 'Создай план статьи о нейросетях',\n    model: 'gemini-2.0-flash-exp',\n    temperature: 0.7,\n    maxTokens: 4096,\n    saveHistory: true\n  })\n})",
+      "python": "import requests\n\nurl = 'https://jejopeguki.beget.app/webhook/ai-studio-advanced'\npayload = {\n  'prompt': 'Создай план статьи о нейросетях',\n  'model': 'gemini-2.0-flash-exp',\n  'temperature': 0.7,\n  'maxTokens': 4096,\n  'saveHistory': True\n}\nresponse = requests.post(url, json=payload)\ndata = response.json()\nif data.get('success'):\n  print(f\"Response: {data['response']}\")\n  print(f\"Request ID: {data['request_id']}\")"
     }
   }
 }

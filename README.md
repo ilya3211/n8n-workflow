@@ -41,3 +41,44 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-a
 - `test-workflow.json` - Тестовый workflow
 - `github_repo_workflows_sync.json` - Синхронизация workflows с GitHub
 - `google-gemini---no-proxy-(test-first).json` - Gemini API без прокси
+
+---
+
+## 📚 Дополнительная документация
+
+- **[USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)** - Готовые примеры использования для вашего домена
+- **[READY_TO_USE_COMMANDS.sh](READY_TO_USE_COMMANDS.sh)** - Shell скрипт с готовыми командами
+- **[IMPORT_URLS.md](IMPORT_URLS.md)** - Подробная инструкция по импорту
+- **[workflows-index.json](workflows-index.json)** - Индекс всех workflows с метаданными
+
+---
+
+## 🌐 Ваш n8n инстанс
+
+**Домен:** https://jejopeguki.beget.app/
+
+### Webhook URLs:
+
+**Базовая версия:**
+```
+https://jejopeguki.beget.app/webhook/ai-studio-automation
+```
+
+**Продвинутая версия:**
+```
+https://jejopeguki.beget.app/webhook/ai-studio-advanced
+```
+
+### Быстрый тест:
+
+```bash
+curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-advanced \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Привет! Расскажи о себе",
+    "temperature": 0.7,
+    "maxTokens": 2048
+  }'
+```
+
+Подробные примеры смотрите в [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)
