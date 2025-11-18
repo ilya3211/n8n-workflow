@@ -38,7 +38,7 @@
               "leftValue": "={{ $json.errorId }}",
               "rightValue": "0",
               "operator": {
-                "type": "number",
+                "type": "string",
                 "operation": "equals"
               }
             }
