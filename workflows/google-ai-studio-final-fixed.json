@@ -1,0 +1,266 @@
+{
+  "name": "Google AI Studio - FINAL FIXED (No Require)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-studio-final",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 360],
+      "webhookId": "ai-studio-final",
+      "id": "webhook-node"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "prompt",
+              "value": "Расскажи кратко о квантовых компьютерах"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 520],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt || $json.body?.prompt || \"Привет!\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 360],
+      "id": "extract-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prompt = $input.item.json.prompt;\n\nconst code = `\nconst sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));\n\nconst browser = await puppeteer.launch();\nconst page = await browser.newPage();\n\ntry {\n  const cookies = [\n    {name: 'SID', value: 'g.a0003Qi4XUBldqx9gzjlDWuALcIleHUdVzjDWfqNHWUfPLh9aLXcmzMV0gk44iOkxD4kPjxCoAACgYKAbUSAQ8SFQHGX2MiTOXEFm1zbm4rnetG7CRfERoVAUF8yKqY8hmLQGd9ceQNUOewNAaE0076', domain: '.google.com', path: '/', secure: false, httpOnly: false},\n    {name: 'HSID', value: 'AEsf95ttBgWYSNJGK', domain: '.google.com', path: '/', secure: false, httpOnly: true},\n    {name: 'SSID', value: 'AQhWqH0-hxutvrkjA', domain: '.google.com', path: '/', secure: true, httpOnly: true},\n    {name: 'APISID', value: 'AhwE--AJL6mK99Yl/ARVRsnOn5p1Rtc3uY', domain: '.google.com', path: '/', secure: false, httpOnly: false},\n    {name: 'SAPISID', value: 'PnXUtntf0yTjDzI4/A7Eu53tuz9CMNzN0H', domain: '.google.com', path: '/', secure: true, httpOnly: false},\n    {name: '__Secure-1PSID', value: 'g.a0003Qi4XUBldqx9gzjlDWuALcIleHUdVzjDWfqNHWUfPLh9aLXcTbANEosUleKmhQb1MP9lsAACgYKAUESAQ8SFQHGX2Mi1GIeiqZU8b9-DfM-ClDCLBoVAUF8yKqLcraa9iYDwUF_bMXKiwzK0076', domain: '.google.com', path: '/', secure: true, httpOnly: true},\n    {name: '__Secure-3PSID', value: 'g.a0003Qi4XUBldqx9gzjlDWuALcIleHUdVzjDWfqNHWUfPLh9aLXc34qhf5vNBTMrpR0JfzjiWwACgYKAbMSAQ8SFQHGX2MicI6pZzYY9bIxEbQ49usFpRoVAUF8yKpoQJ60F2GkX7sgbK25hcL-0076', domain: '.google.com', path: '/', secure: true, httpOnly: true},\n    {name: '__Secure-1PAPISID', value: 'PnXUtntf0yTjDzI4/A7Eu53tuz9CMNzN0H', domain: '.google.com', path: '/', secure: true, httpOnly: false},\n    {name: '__Secure-3PAPISID', value: 'PnXUtntf0yTjDzI4/A7Eu53tuz9CMNzN0H', domain: '.google.com', path: '/', secure: true, httpOnly: false},\n    {name: '__Secure-1PSIDCC', value: 'AKEyXzWC0G1wIwRuC4M3BNm7pTq9bF7pdai-w9w39PNXECDP8A0kHUuQliwsZ3rrMjzBIIlXGRI', domain: '.google.com', path: '/', secure: true, httpOnly: true},\n    {name: '__Secure-3PSIDCC', value: 'AKEyXzW0Yc2uGFS1YYrxveTWYw1VRJo7aczCFejulM9NP3z5vWzG0rZkaq9_InMh7_pmRBx0Eg', domain: '.google.com', path: '/', secure: true, httpOnly: true},\n    {name: '__Secure-1PSIDTS', value: 'sidts-CjIBwQ9iIysAJCxC37bJKP3JcIsWoyHdSQEsZtSr-BQwRQyyPDG-D51yVXrBmCslBsGkERAA', domain: '.google.com', path: '/', secure: true, httpOnly: true},\n    {name: '__Secure-3PSIDTS', value: 'sidts-CjIBwQ9iIysAJCxC37bJKP3JcIsWoyHdSQEsZtSr-BQwRQyyPDG-D51yVXrBmCslBsGkERAA', domain: '.google.com', path: '/', secure: true, httpOnly: true},\n    {name: 'NID', value: '526=XOJSjJNLy99nJ9CAXDAoXt4J9xRCtDQIVrn-QVEBjRY1Siemj3o-T7dDOotablRcDWv-8amjAxSTJmYv3SWQX0lwHaWuxZCgGQcF06U2c2UfKIprjKlUeHjKXPtQHYalyUPZNY56n8DYCkelRV0DkC49sndOXl2U6PCvOresqS-DgryooNJ3pyECFBwj3EZYEaCbUQDtM67BykhT5soDzPVyMwgQIuZbWCbfl8QoEHiLtTyRfZUF4bN5oprLphYXGrpgQ8LTlYvbPvUY0vGqFkLFJjGhR9JBsiUONR84yBZh86dgVcbK0gmi66fM3b4OuJnnIEnrrkJvLium_eMz9-9gkQhycxK7Z8FrbeMS2rzkpP2Z3dsqvj2NlaUKjOpzwu_cgbQ8lZOsx8NCzNBXi4cAGA2wZO-Hpgh_DpHypzLT9WGsD6xykN9UeirLNO-Z6BEVmunc2avHHMsWz_87lpY7V-XzQPluypjFLIk4-C15GleK9TnO8-pVrgcZiPxEwrTQlnpD2IfjjUwaQM5z6_7GrX-BzPAgoAt-OL7_dAteit_NsWhyXbdSCcB1h8PE_feTNCPiGnzggjGTHpPxvmJQRVQARjbe2bwfItETfMtZdMxFjVMVKNgQIwOk74zU92FhAydFC0gGl70_DZjllowbEgz-poKw-I3SAKVy_3r-Yyw7ujUoBfFvnydgGXl5sV5GY9KE2GXa8V_H7Q8zfP8adCwfvzsh3AKUPrhgDwE3X5HJ0HyoOq67DjtZXtsUbRkUnUF9iizLNV37nx4wi3ujlbSuVG6kS-HqcRTBxOAv0rTEI3UMcyilssy4tep_2Lm2ysqLJK1TtMY7o7IFNDOWoD1dBLzegq1Q6RUsN9-yuBtfeUvluhgMJzsquSsR2xBrFGlQFaEn6c9WrCRHN1miSzhxlskfjpv8unn0KpN6kkXgonyIE4K4AJK9Xx_FLZZni-eLslrJAYQZBXxS_uUOBRXWwOMtpU2OzrBBR1k9J-l1nrTyCDak9u7MMny6k_IXROhkC52d2wEOBCXiKNEIvEDGl9gDw_RWqmS4jPrNEn5bVUGDcI-CbM0gvTT3s7osX71w7Mu2byrFwbpD0reeOa9RL8RuawBEx5G2kCzJVlZrLGMUYvb2Mzm0_g', domain: '.google.com', path: '/', secure: true, httpOnly: true}\n  ];\n  \n  await page.setCookie(...cookies);\n  await page.goto('https://aistudio.google.com/app/prompts/new_chat', {waitUntil: 'networkidle2', timeout: 60000});\n  await sleep(10000);\n  \n  const inputSelectors = ['textarea', 'div[contenteditable=\"true\"]', '[contenteditable=\"true\"]'];\n  let inputElement = null;\n  for (const selector of inputSelectors) {\n    const elements = await page.$$(selector);\n    if (elements.length > 0) {\n      inputElement = elements[0];\n      break;\n    }\n  }\n  \n  if (!inputElement) {\n    const screenshot = await page.screenshot({fullPage: true, encoding: 'base64'});\n    await browser.close();\n    return {success: false, error: 'Input field not found', screenshot: screenshot};\n  }\n  \n  await inputElement.click();\n  await sleep(1000);\n  await page.keyboard.type('${prompt.replace(/'/g, \"\\\\'\").replace(/\"/g, '\\\\\"').replace(/\\n/g, ' ')}', {delay: 50});\n  await sleep(2000);\n  await page.keyboard.press('Enter');\n  await sleep(30000);\n  \n  const aiResponse = await page.evaluate(() => {\n    const selectors = ['div[class*=\"response\"]', 'div[class*=\"message\"]', 'pre', 'code', 'p'];\n    for (const selector of selectors) {\n      const elements = document.querySelectorAll(selector);\n      if (elements.length > 0) {\n        const lastEl = elements[elements.length - 1];\n        const text = lastEl.innerText || lastEl.textContent;\n        if (text && text.length > 50) return text;\n      }\n    }\n    return null;\n  });\n  \n  const screenshot = await page.screenshot({fullPage: true, encoding: 'base64'});\n  await browser.close();\n  \n  return {success: true, aiResponse: aiResponse || 'Response received but could not extract text', screenshot: screenshot, promptSent: true};\n} catch (error) {\n  await browser.close();\n  return {success: false, error: error.message, stack: error.stack};\n}\n`;\n\nreturn {json: {code: code, prompt: prompt}};"
+      },
+      "name": "Build Automation Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 360],
+      "id": "build-code-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/function?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"code\": {{ JSON.stringify($json.code) }}\n}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "name": "Execute Full Automation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 360],
+      "id": "execute-node"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-success",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [1120, 360],
+      "id": "check-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "🎉 Полная автоматизация Google AI Studio выполнена!",
+              "type": "string"
+            },
+            {
+              "id": "ai_response",
+              "name": "ai_response",
+              "value": "={{ $json.aiResponse }}",
+              "type": "string"
+            },
+            {
+              "id": "screenshot",
+              "name": "screenshot_base64",
+              "value": "={{ $json.screenshot }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt_sent",
+              "name": "prompt_sent",
+              "value": "={{ $json.promptSent }}",
+              "type": "boolean"
+            },
+            {
+              "id": "prompt",
+              "name": "original_prompt",
+              "value": "={{ $('Extract Prompt').item.json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "method",
+              "name": "automation_method",
+              "value": "browserless.io + puppeteer + real cookies (NO REQUIRE)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 260],
+      "id": "success-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error || 'Automation failed' }}",
+              "type": "string"
+            },
+            {
+              "id": "screenshot",
+              "name": "screenshot_base64",
+              "value": "={{ $json.screenshot }}",
+              "type": "string"
+            },
+            {
+              "id": "details",
+              "name": "error_details",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 460],
+      "id": "error-node"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1560, 360],
+      "id": "respond-node"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Extract Prompt", "type": "main", "index": 0}]]
+    },
+    "Manual Trigger": {
+      "main": [[{"node": "Extract Prompt", "type": "main", "index": 0}]]
+    },
+    "Extract Prompt": {
+      "main": [[{"node": "Build Automation Code", "type": "main", "index": 0}]]
+    },
+    "Build Automation Code": {
+      "main": [[{"node": "Execute Full Automation", "type": "main", "index": 0}]]
+    },
+    "Execute Full Automation": {
+      "main": [[{"node": "Check Success", "type": "main", "index": 0}]]
+    },
+    "Check Success": {
+      "main": [
+        [{"node": "Format Success", "type": "main", "index": 0}],
+        [{"node": "Format Error", "type": "main", "index": 0}]
+      ]
+    },
+    "Format Success": {
+      "main": [[{"node": "Respond", "type": "main", "index": 0}]]
+    },
+    "Format Error": {
+      "main": [[{"node": "Respond", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
