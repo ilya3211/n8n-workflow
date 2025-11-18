@@ -1,0 +1,70 @@
+{
+  "name": "Claude.AI via Browserless Chrome API",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const token = '2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac';\nconst sessionKey = 'YOUR_SESSION_KEY_HERE';\nconst cfBmCookie = 'YOUR_CF_BM_COOKIE_HERE';\nconst userPrompt = $input.first().json.prompt || 'Привет! Как дела?';\n\nconst requestBody = {\n  url: 'https://claude.ai/new',\n  gotoOptions: {\n    waitUntil: 'networkidle2',\n    timeout: 90000\n  },\n  cookies: [\n    {\n      name: 'sessionKey',\n      value: sessionKey,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    },\n    {\n      name: '__cf_bm',\n      value: cfBmCookie,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    }\n  ],\n  rejectResourceTypes: ['image', 'media', 'font'],\n  setJavaScriptEnabled: true,\n  bestAttempt: true,\n  waitFor: 8000\n};\n\nreturn [{json: {\n  url: `https://production-sfo.browserless.io/chrome/content?token=${token}&stealth&blockAds`,\n  body: JSON.stringify(requestBody)\n}}];"
+      },
+      "id": "b1",
+      "name": "Prepare Chrome Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "contentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "c1",
+      "name": "Get Page Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const html = $input.first().json;\nconst htmlString = typeof html === 'string' ? html : JSON.stringify(html);\n\nconst titleMatch = htmlString.match(/<title>(.*?)<\\/title>/);\nconst pageTitle = titleMatch ? titleMatch[1] : 'Unknown';\n\nconst hasCloudflare = htmlString.includes('Just a moment') || htmlString.includes('Checking your browser');\nconst hasLoginForm = htmlString.includes('login') || htmlString.includes('sign in');\nconst hasInputField = htmlString.includes('contenteditable=\"true\"') || htmlString.includes('placeholder');\n\nlet status = 'unknown';\nlet message = '';\n\nif (hasCloudflare) {\n  status = 'cloudflare_blocked';\n  message = 'Cloudflare challenge активен - нужен другой подход';\n} else if (hasLoginForm) {\n  status = 'auth_failed';\n  message = 'Редирект на страницу логина - куки устарели';\n} else if (hasInputField) {\n  status = 'success';\n  message = 'Страница загружена успешно! Поле ввода найдено';\n} else {\n  status = 'unknown_page';\n  message = 'Страница загружена, но структура неизвестна';\n}\n\nreturn [{json: {\n  status: status,\n  message: message,\n  pageTitle: pageTitle,\n  hasCloudflare: hasCloudflare,\n  hasLoginForm: hasLoginForm,\n  hasInputField: hasInputField,\n  htmlLength: htmlString.length\n}}];"
+      },
+      "id": "d1",
+      "name": "Analyze Page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Prepare Chrome Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Chrome Request": {
+      "main": [[{"node": "Get Page Content", "type": "main", "index": 0}]]
+    },
+    "Get Page Content": {
+      "main": [[{"node": "Analyze Page", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
