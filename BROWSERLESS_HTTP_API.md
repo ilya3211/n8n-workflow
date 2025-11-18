@@ -22,13 +22,14 @@
 ### 1. Импорт workflow
 
 ```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-simple.json
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-working.json
 ```
 
 **Шаги:**
-1. n8n → Workflows → "+" → **Import from URL**
-2. Вставьте URL выше
-3. Import → Workflow загружен ✅
+1. **ВАЖНО:** Если вы импортировали старую версию - удалите её в n8n!
+2. n8n → Workflows → "+" → **Import from URL**
+3. Вставьте URL выше
+4. Import → Workflow загружен ✅
 
 ### 2. Настройка credentials
 
@@ -99,10 +100,11 @@ Browserless:
    - `cfBmCookie` (замените на ваш)
    - `userPrompt` (текст запроса)
 
-3. **Call Browserless** - Code node с fetch() к Browserless API
+3. **Call Browserless** - Code node с axios к Browserless API
    - Формирует JSON запрос
-   - Отправляет код к Browserless через fetch()
+   - Отправляет код к Browserless через axios
    - Получает результат
+   - Обработка ошибок
 
 4. **Format Result** - форматирование ответа
    - `status`: ✅ Success или ⚠️ Partial

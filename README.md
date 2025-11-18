@@ -31,21 +31,22 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 
 ---
 
-### 🌐 Browserless HTTP API (ОБЛАЧНЫЙ БРАУЗЕР) - 0 ЗАВИСИМОСТЕЙ! 🔥
+### 🌐 Browserless (ОБЛАЧНЫЙ БРАУЗЕР) - БЕЗ CHROME! 🔥
 
 **Импорт через URL:**
 
 ```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-simple.json
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-working.json
 ```
 
 **Как использовать:**
-1. n8n → Workflows → "+" → **Import from URL**
-2. Вставьте URL выше
-3. Import → Workflow загружен ✅
-4. Откройте ноду **"Set Credentials"**
-5. Замените `sessionKey` и `cfBmCookie`
-6. Execute Workflow → Test!
+1. **ВАЖНО:** Если вы импортировали старую версию - удалите её!
+2. n8n → Workflows → "+" → **Import from URL**
+3. Вставьте URL выше
+4. Import → Workflow загружен ✅
+5. Откройте ноду **"Set Credentials"**
+6. Замените `sessionKey` и `cfBmCookie`
+7. Execute Workflow → Test!
 
 **Преимущества:**
 - ✅ **НЕ НУЖЕН Chrome!**
