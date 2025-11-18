@@ -43,41 +43,13 @@
     },
     {
       "parameters": {
-        "jsCode": "const targetURL = $input.item.json.targetURL;\nconst waitTime = $input.item.json.waitTime;\n\nconst browserlessCode = `\nmodule.exports = async ({ page, context }) => {\n  const { targetURL, waitTime } = context;\n  \n  try {\n    let capturedData = null;\n    \n    await page.evaluateOnNewDocument(() => {\n      window.__turnstileData = null;\n      \n      Object.defineProperty(window, 'turnstile', {\n        value: new Proxy({}, {\n          get(target, prop) {\n            if (prop === 'render') {\n              return function(container, params) {\n                console.log('[INTERCEPTED] Turnstile render called');\n                \n                window.__turnstileData = {\n                  sitekey: params.sitekey || params['site-key'],\n                  action: params.action,\n                  cData: params.cData || params['c-data'],\n                  chlPageData: params.chlPageData || params['chl-page-data'],\n                  theme: params.theme,\n                  language: params.language,\n                  size: params.size,\n                  callback: typeof params.callback,\n                  allParams: params\n                };\n                \n                return 'intercepted-widget-id';\n              };\n            }\n            return target[prop];\n          }\n        }),\n        configurable: false\n      });\n    });\n    \n    console.log('[NAVIGATE] Going to ' + targetURL);\n    await page.goto(targetURL, {\n      waitUntil: 'networkidle2',\n      timeout: 30000\n    });\n    \n    console.log('[WAIT] Waiting ' + waitTime + 'ms for Turnstile...');\n    await page.waitForTimeout(waitTime);\n    \n    capturedData = await page.evaluate(() => window.__turnstileData);\n    \n    if (!capturedData || !capturedData.sitekey) {\n      console.log('[FALLBACK] Searching for sitekey in page source...');\n      \n      const pageContent = await page.content();\n      const sitekeyMatch = pageContent.match(/sitekey[\\\\\"':\\\\s]+(6[a-zA-Z0-9_-]{39,})/i);\n      \n      if (sitekeyMatch) {\n        capturedData = {\n          sitekey: sitekeyMatch[1],\n          action: 'login',\n          method: 'page_source_extraction',\n          pageURL: targetURL\n        };\n      }\n    }\n    \n    if (!capturedData || !capturedData.sitekey) {\n      throw new Error('Could not extract Turnstile sitekey');\n    }\n    \n    const result = {\n      success: true,\n      data: {\n        cloudflare_turnstile: {\n          sitekey: capturedData.sitekey,\n          pageurl: targetURL,\n          action: capturedData.action || 'login',\n          cData: capturedData.cData,\n          chlPageData: capturedData.chlPageData\n        },\n        raw_data: capturedData,\n        rucaptcha_request: {\n          method: 'turnstile',\n          sitekey: capturedData.sitekey,\n          pageurl: targetURL,\n          data: capturedData.cData,\n          pagedata: capturedData.chlPageData,\n          action: capturedData.action || 'login',\n          json: 1\n        }\n      },\n      extracted_at: new Date().toISOString(),\n      target_url: targetURL\n    };\n    \n    console.log('[SUCCESS] Turnstile data extracted');\n    return result;\n    \n  } catch (error) {\n    console.error('[ERROR]', error.message);\n    return {\n      success: false,\n      error: error.message,\n      stack: error.stack,\n      target_url: targetURL\n    };\n  }\n};\n`;\n\nreturn {\n  json: {\n    requestBody: {\n      code: browserlessCode,\n      context: {\n        targetURL: targetURL,\n        waitTime: waitTime\n      }\n    }\n  }\n};"
+        "jsCode": "const axios = require('axios');\n\nconst targetURL = $input.item.json.targetURL;\nconst waitTime = $input.item.json.waitTime;\nconst browserlessToken = $input.item.json.browserlessToken;\n\n// Browserless function code as a string\nconst functionCode = String.raw`\nmodule.exports = async ({ page, context }) => {\n  const { targetURL, waitTime } = context;\n  \n  try {\n    let capturedData = null;\n    \n    await page.evaluateOnNewDocument(() => {\n      window.__turnstileData = null;\n      \n      Object.defineProperty(window, 'turnstile', {\n        value: new Proxy({}, {\n          get(target, prop) {\n            if (prop === 'render') {\n              return function(container, params) {\n                console.log('[INTERCEPTED] Turnstile render called');\n                \n                window.__turnstileData = {\n                  sitekey: params.sitekey || params['site-key'],\n                  action: params.action,\n                  cData: params.cData || params['c-data'],\n                  chlPageData: params.chlPageData || params['chl-page-data'],\n                  theme: params.theme,\n                  language: params.language,\n                  size: params.size,\n                  callback: typeof params.callback,\n                  allParams: params\n                };\n                \n                return 'intercepted-widget-id';\n              };\n            }\n            return target[prop];\n          }\n        }),\n        configurable: false\n      });\n    });\n    \n    console.log('[NAVIGATE] Going to ' + targetURL);\n    await page.goto(targetURL, {\n      waitUntil: 'networkidle2',\n      timeout: 30000\n    });\n    \n    console.log('[WAIT] Waiting ' + waitTime + 'ms for Turnstile...');\n    await page.waitForTimeout(waitTime);\n    \n    capturedData = await page.evaluate(() => window.__turnstileData);\n    \n    if (!capturedData || !capturedData.sitekey) {\n      console.log('[FALLBACK] Searching for sitekey in page source...');\n      \n      const pageContent = await page.content();\n      const sitekeyMatch = pageContent.match(/sitekey[\\\"':s]+(6[a-zA-Z0-9_-]{39,})/i);\n      \n      if (sitekeyMatch) {\n        capturedData = {\n          sitekey: sitekeyMatch[1],\n          action: 'login',\n          method: 'page_source_extraction',\n          pageURL: targetURL\n        };\n      }\n    }\n    \n    if (!capturedData || !capturedData.sitekey) {\n      throw new Error('Could not extract Turnstile sitekey');\n    }\n    \n    const result = {\n      success: true,\n      data: {\n        cloudflare_turnstile: {\n          sitekey: capturedData.sitekey,\n          pageurl: targetURL,\n          action: capturedData.action || 'login',\n          cData: capturedData.cData,\n          chlPageData: capturedData.chlPageData\n        },\n        raw_data: capturedData,\n        rucaptcha_request: {\n          method: 'turnstile',\n          sitekey: capturedData.sitekey,\n          pageurl: targetURL,\n          data: capturedData.cData,\n          pagedata: capturedData.chlPageData,\n          action: capturedData.action || 'login',\n          json: 1\n        }\n      },\n      extracted_at: new Date().toISOString(),\n      target_url: targetURL\n    };\n    \n    console.log('[SUCCESS] Turnstile data extracted');\n    return result;\n    \n  } catch (error) {\n    console.error('[ERROR]', error.message);\n    return {\n      success: false,\n      error: error.message,\n      stack: error.stack,\n      target_url: targetURL\n    };\n  }\n};\n`;\n\n// Make request to Browserless\nconst response = await axios.post(\n  `https://chrome.browserless.io/function?token=${browserlessToken}`,\n  {\n    code: functionCode,\n    context: {\n      targetURL: targetURL,\n      waitTime: waitTime\n    }\n  },\n  {\n    headers: {\n      'Content-Type': 'application/json'\n    },\n    timeout: 60000\n  }\n);\n\nreturn {\n  json: response.data\n};"
       },
-      "id": "code-prepare-node",
-      "name": "Prepare Browserless Request",
+      "id": "code-browserless-node",
+      "name": "Execute Browserless Extraction",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [680, 300]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://chrome.browserless.io/function?token={{ $('Set Parameters').item.json.browserlessToken }}",
-        "authentication": "none",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": []
-        },
-        "specifyBody": "json",
-        "jsonBody": "={{ $json.requestBody }}",
-        "options": {}
-      },
-      "id": "http-browserless-node",
-      "name": "Browserless Function",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [900, 300]
     },
     {
       "parameters": {
@@ -205,25 +177,14 @@
       "main": [
         [
           {
-            "node": "Prepare Browserless Request",
+            "node": "Execute Browserless Extraction",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare Browserless Request": {
-      "main": [
-        [
-          {
-            "node": "Browserless Function",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Browserless Function": {
+    "Execute Browserless Extraction": {
       "main": [
         [
           {
