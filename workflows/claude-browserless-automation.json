@@ -1,0 +1,101 @@
+{
+  "name": "Claude.AI via Browserless (no local Chrome)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// ============================================\n// Claude.AI Automation via Browserless\n// Без локального Chrome!\n// ============================================\n\nconst BROWSERLESS_TOKEN = '2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac';\nconst SESSION_KEY = 'YOUR_SESSION_KEY_HERE';\nconst CF_BM_COOKIE = 'YOUR_CF_BM_COOKIE_HERE';\n\nconst puppeteer = require('puppeteer');\n\n// Получаем prompt от пользователя\nconst userPrompt = $input.first().json.prompt || 'Привет! Как дела?';\n\nconsole.log('Подключаемся к Browserless...');\n\nlet browser;\ntry {\n  // Подключаемся к Browserless через WebSocket\n  browser = await puppeteer.connect({\n    browserWSEndpoint: `wss://chrome.browserless.io?token=${BROWSERLESS_TOKEN}`\n  });\n  \n  console.log('Браузер подключен!');\n  \n  const page = await browser.newPage();\n  \n  // Устанавливаем viewport\n  await page.setViewport({ width: 1280, height: 800 });\n  \n  // Устанавливаем cookies для аутентификации Claude\n  await page.setCookie(\n    {\n      name: 'sessionKey',\n      value: SESSION_KEY,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    },\n    {\n      name: '__cf_bm',\n      value: CF_BM_COOKIE,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    }\n  );\n  \n  console.log('Переходим на claude.ai...');\n  \n  // Переходим на страницу нового чата\n  await page.goto('https://claude.ai/new', {\n    waitUntil: 'networkidle2',\n    timeout: 30000\n  });\n  \n  console.log('Ждем поле ввода...');\n  \n  // Ждем появления поля ввода\n  await page.waitForSelector('div[contenteditable=\"true\"]', { timeout: 15000 });\n  \n  console.log('Вводим prompt...');\n  \n  // Вводим текст\n  await page.type('div[contenteditable=\"true\"]', userPrompt, { delay: 50 });\n  \n  // Небольшая пауза перед отправкой\n  await page.waitForTimeout(500);\n  \n  console.log('Отправляем запрос...');\n  \n  // Нажимаем кнопку отправки\n  await page.click('button[aria-label=\"Send Message\"]');\n  \n  console.log('Ждем ответ от Claude...');\n  \n  // Ждем появления ответа (увеличенный timeout для длинных ответов)\n  await page.waitForFunction(\n    () => {\n      const messages = document.querySelectorAll('[data-testid=\"message\"]');\n      const lastMessage = messages[messages.length - 1];\n      if (!lastMessage) return false;\n      \n      // Проверяем, что сообщение от ассистента и не пустое\n      const isAssistant = lastMessage.querySelector('[data-testid=\"assistant-message\"]');\n      const hasContent = lastMessage.textContent.trim().length > 10;\n      \n      // Проверяем, что генерация завершена (нет индикатора загрузки)\n      const isLoading = document.querySelector('[data-testid=\"loading-indicator\"]');\n      \n      return isAssistant && hasContent && !isLoading;\n    },\n    { timeout: 120000, polling: 1000 }\n  );\n  \n  console.log('Извлекаем ответ...');\n  \n  // Извлекаем текст ответа\n  const response = await page.evaluate(() => {\n    const messages = document.querySelectorAll('[data-testid=\"message\"]');\n    const lastMessage = messages[messages.length - 1];\n    \n    if (lastMessage) {\n      const assistantMsg = lastMessage.querySelector('[data-testid=\"assistant-message\"]');\n      if (assistantMsg) {\n        return assistantMsg.textContent.trim();\n      }\n    }\n    \n    return 'Ответ не найден';\n  });\n  \n  console.log('Ответ получен! Длина:', response.length, 'символов');\n  \n  // Закрываем браузер\n  await browser.close();\n  \n  // Возвращаем результат\n  return [\n    {\n      json: {\n        success: true,\n        prompt: userPrompt,\n        response: response,\n        timestamp: new Date().toISOString(),\n        browser_service: 'Browserless',\n        response_length: response.length\n      }\n    }\n  ];\n  \n} catch (error) {\n  // В случае ошибки закрываем браузер\n  if (browser) {\n    await browser.close();\n  }\n  \n  console.error('Ошибка:', error.message);\n  \n  return [\n    {\n      json: {\n        success: false,\n        error: error.message,\n        stack: error.stack,\n        timestamp: new Date().toISOString()\n      }\n    }\n  ];\n}"
+      },
+      "id": "e2e2e2e2-e2e2-e2e2-e2e2-e2e2e2e2e2e2",
+      "name": "Claude via Browserless",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1",
+              "name": "status",
+              "value": "={{ $json.success ? '✅ Success' : '❌ Error' }}",
+              "type": "string"
+            },
+            {
+              "id": "f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3",
+              "name": "response",
+              "value": "={{ $json.response || 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "f4f4f4f4-f4f4-f4f4-f4f4-f4f4f4f4f4f4",
+              "name": "browser",
+              "value": "={{ $json.browser_service || 'Browserless' }}",
+              "type": "string"
+            },
+            {
+              "id": "f5f5f5f5-f5f5-f5f5-f5f5-f5f5f5f5f5f5",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f6f6f6f6-f6f6-f6f6-f6f6-f6f6f6f6f6f6",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Claude via Browserless",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude via Browserless": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}

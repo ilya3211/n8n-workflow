@@ -31,6 +31,34 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 
 ---
 
+### 🌐 Browserless + Puppeteer (ОБЛАЧНЫЙ БРАУЗЕР) - БЕЗ ЛОКАЛЬНОГО CHROME! 🔥
+
+**Импорт через URL:**
+
+```
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-automation.json
+```
+
+**Как использовать:**
+1. n8n → Workflows → "+" → **Import from URL**
+2. Вставьте URL выше
+3. Import → Workflow загружен ✅
+4. Откройте ноду **"Claude via Browserless"** → Edit
+5. Замените `SESSION_KEY` и `CF_BM_COOKIE` (строки 8-9)
+6. Execute Workflow → Test!
+
+**Преимущества:**
+- ✅ **НЕ НУЖЕН локальный Chrome!**
+- ✅ Облачный браузер Browserless
+- ✅ Работает через WebSocket
+- ✅ Поддержка cookies и sessions
+- ✅ Стабильно и быстро (3-8 сек)
+- ✅ Токен уже настроен!
+
+📖 [Полное руководство по Browserless](./BROWSERLESS_GUIDE.md)
+
+---
+
 ### 🌟 n8n-nodes-puppeteer (визуальный подход с браузером)
 
 **Импорт через URL:**
@@ -153,6 +181,7 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 | Файл | Описание |
 |------|----------|
 | [CLAUDE_API_WITHOUT_BROWSER.md](./CLAUDE_API_WITHOUT_BROWSER.md) | 🔥 **API без браузера - самый простой способ!** |
+| [BROWSERLESS_GUIDE.md](./BROWSERLESS_GUIDE.md) | 🌐 **Облачный браузер - без локального Chrome!** |
 | [QUICK_START.md](./QUICK_START.md) | Быстрый старт за 5 минут |
 | [INSTALLATION.md](./INSTALLATION.md) | Подробная инструкция по установке |
 | [READY_TO_USE.md](./READY_TO_USE.md) | Гайд по FULL READY версии |
