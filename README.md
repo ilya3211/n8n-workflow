@@ -11,14 +11,32 @@
 
 Автоматизация работы с Google AI Studio через browserless и Puppeteer.
 
+#### ⚠️ Важно: Есть проблема с Puppeteer нодой?
+
+Если вы видите ошибку `"Unrecognized node type: n8n-nodes-base.puppeteer"`:
+
+👉 **Используйте HTTP API версию** (работает на любом n8n):
+```
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-http-api.json
+```
+
+📖 Подробное решение: [TROUBLESHOOTING_PUPPETEER.md](TROUBLESHOOTING_PUPPETEER.md)
+
+---
+
 #### Импорт через URL в n8n:
 
-**Базовая версия:**
+**HTTP API версия (Рекомендуется - без Puppeteer ноды):**
+```
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-http-api.json
+```
+
+**Базовая версия (требует Puppeteer ноду):**
 ```
 https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-automation.json
 ```
 
-**Продвинутая версия:**
+**Продвинутая версия (требует Puppeteer ноду):**
 ```
 https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-ai-studio-01MvGTwwZs9rKG6a5jgs9gkK/workflows/google-ai-studio-browserless-advanced.json
 ```
@@ -59,6 +77,11 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/automate-google-a
 
 ### Webhook URLs:
 
+**HTTP API версия (Рекомендуется):**
+```
+https://jejopeguki.beget.app/webhook/ai-studio-http
+```
+
 **Базовая версия:**
 ```
 https://jejopeguki.beget.app/webhook/ai-studio-automation
@@ -69,15 +92,13 @@ https://jejopeguki.beget.app/webhook/ai-studio-automation
 https://jejopeguki.beget.app/webhook/ai-studio-advanced
 ```
 
-### Быстрый тест:
+### Быстрый тест (HTTP API версия):
 
 ```bash
-curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-advanced \
+curl -X POST https://jejopeguki.beget.app/webhook/ai-studio-http \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "Привет! Расскажи о себе",
-    "temperature": 0.7,
-    "maxTokens": 2048
+    "prompt": "Привет! Расскажи о последних новостях в AI"
   }'
 ```
 

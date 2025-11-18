@@ -1,0 +1,511 @@
+{
+  "name": "Google AI Studio - Browserless HTTP API (No Puppeteer Node)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-studio-http",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        360
+      ],
+      "webhookId": "ai-studio-http-webhook",
+      "id": "webhook-node"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "prompt",
+              "value": "Расскажи о последних достижениях в области искусственного интеллекта"
+            },
+            {
+              "name": "browserlessUrl",
+              "value": "http://localhost:3000"
+            }
+          ],
+          "number": [
+            {
+              "name": "timeout",
+              "value": 90000
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        520
+      ],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt || $json.body?.prompt || \"Привет! Расскажи о себе.\" }}",
+              "type": "string"
+            },
+            {
+              "id": "browserlessUrl",
+              "name": "browserlessUrl",
+              "value": "={{ $json.browserlessUrl || $json.body?.browserlessUrl || \"http://localhost:3000\" }}",
+              "type": "string"
+            },
+            {
+              "id": "timeout",
+              "name": "timeout",
+              "value": "={{ $json.timeout || $json.body?.timeout || 90000 }}",
+              "type": "number"
+            },
+            {
+              "id": "aiStudioUrl",
+              "name": "aiStudioUrl",
+              "value": "https://aistudio.google.com/app/prompts/new_chat",
+              "type": "string"
+            },
+            {
+              "id": "requestId",
+              "name": "requestId",
+              "value": "={{ $now.toUnixInteger() }}-{{ Math.random().toString(36).substring(7) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        360
+      ],
+      "id": "extract-params-node"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-prompt",
+              "leftValue": "={{ $json.prompt }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        680,
+        360
+      ],
+      "id": "validate-input-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Подготовка Puppeteer скрипта для отправки в Browserless\nconst params = $input.item.json;\n\n// Создаем код для выполнения в браузере\nconst code = `\nmodule.exports = async ({ page }) => {\n  try {\n    // Переходим на Google AI Studio\n    await page.goto('${params.aiStudioUrl}', {\n      waitUntil: 'networkidle2',\n      timeout: 60000\n    });\n    \n    // Ждем загрузки страницы\n    await page.waitForTimeout(5000);\n    \n    // Ищем поле ввода промпта\n    const inputSelectors = [\n      'textarea[placeholder*=\"Enter a prompt\"]',\n      'textarea[placeholder*=\"Type a message\"]',\n      'div[contenteditable=\"true\"]',\n      'textarea[aria-label*=\"prompt\"]',\n      'textarea[aria-label*=\"message\"]',\n      '.prompt-textarea',\n      '#prompt-textarea',\n      'textarea'\n    ];\n    \n    let inputFound = false;\n    for (const selector of inputSelectors) {\n      try {\n        await page.waitForSelector(selector, { timeout: 5000 });\n        await page.type(selector, '${params.prompt.replace(/'/g, \"\\\\'\").replace(/\\n/g, \"\\\\n\")}', { delay: 50 });\n        inputFound = true;\n        break;\n      } catch (e) {\n        continue;\n      }\n    }\n    \n    if (!inputFound) {\n      throw new Error('Input field not found');\n    }\n    \n    await page.waitForTimeout(1000);\n    \n    // Ищем и нажимаем кнопку отправки\n    const submitSelectors = [\n      'button[aria-label*=\"Send\"]',\n      'button[aria-label*=\"Run\"]',\n      'button[type=\"submit\"]',\n      'button:has-text(\"Send\")',\n      'button:has-text(\"Run\")',\n      '.send-button',\n      '#send-button'\n    ];\n    \n    let submitFound = false;\n    for (const selector of submitSelectors) {\n      try {\n        const button = await page.$(selector);\n        if (button) {\n          await button.click();\n          submitFound = true;\n          break;\n        }\n      } catch (e) {\n        continue;\n      }\n    }\n    \n    if (!submitFound) {\n      // Пробуем нажать Enter\n      await page.keyboard.press('Enter');\n    }\n    \n    // Ждем появления ответа (максимум 90 секунд)\n    await page.waitForTimeout(5000);\n    \n    // Ищем элемент с ответом\n    const responseSelectors = [\n      'div[class*=\"response\"]',\n      'div[class*=\"message\"][class*=\"assistant\"]',\n      'div[class*=\"ai-response\"]',\n      'div[data-message-author-role=\"assistant\"]',\n      '.response-container',\n      '.ai-message',\n      'pre'\n    ];\n    \n    let responseText = '';\n    let responseFound = false;\n    \n    // Ждем появления ответа с несколькими попытками\n    for (let attempt = 0; attempt < 18; attempt++) {\n      for (const selector of responseSelectors) {\n        try {\n          const elements = await page.$$(selector);\n          if (elements.length > 0) {\n            const lastElement = elements[elements.length - 1];\n            responseText = await page.evaluate(el => el.innerText || el.textContent, lastElement);\n            if (responseText && responseText.length > 10) {\n              responseFound = true;\n              break;\n            }\n          }\n        } catch (e) {\n          continue;\n        }\n      }\n      \n      if (responseFound && responseText.length > 50) {\n        break;\n      }\n      \n      await page.waitForTimeout(5000);\n    }\n    \n    // Делаем скриншот\n    const screenshot = await page.screenshot({\n      fullPage: true,\n      encoding: 'base64'\n    });\n    \n    return {\n      success: responseFound,\n      response: responseText || 'Response not found or empty',\n      screenshot: screenshot,\n      debug: {\n        pageTitle: await page.title(),\n        pageUrl: await page.url()\n      }\n    };\n    \n  } catch (error) {\n    return {\n      success: false,\n      error: error.message,\n      stack: error.stack\n    };\n  }\n};\n`;\n\nreturn {\n  json: {\n    code: code,\n    context: {\n      prompt: params.prompt,\n      aiStudioUrl: params.aiStudioUrl,\n      requestId: params.requestId\n    },\n    browserlessUrl: params.browserlessUrl,\n    timeout: params.timeout\n  }\n};"
+      },
+      "name": "Prepare Puppeteer Script",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        260
+      ],
+      "id": "prepare-script-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.browserlessUrl }}/function",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"code\": {{ JSON.stringify($json.code) }},\n  \"context\": {{ JSON.stringify($json.context) }}\n}",
+        "options": {
+          "timeout": "={{ $json.timeout }}"
+        }
+      },
+      "name": "Execute via Browserless",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        260
+      ],
+      "id": "execute-browserless-node",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-success",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check Result",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        1340,
+        260
+      ],
+      "id": "check-result-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "response",
+              "name": "response",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "screenshot_base64",
+              "name": "screenshot_base64",
+              "value": "={{ $json.screenshot }}",
+              "type": "string"
+            },
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{ $('Extract Parameters').item.json.requestId }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "original_prompt",
+              "value": "={{ $('Extract Parameters').item.json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "method",
+              "name": "automation_method",
+              "value": "browserless-http-api",
+              "type": "string"
+            },
+            {
+              "id": "debug",
+              "name": "debug_info",
+              "value": "={{ $json.debug }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1560,
+        160
+      ],
+      "id": "format-success-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error || 'Automation failed' }}",
+              "type": "string"
+            },
+            {
+              "id": "error_details",
+              "name": "error_details",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{ $('Extract Parameters').item.json.requestId }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1560,
+        360
+      ],
+      "id": "format-error-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error",
+              "name": "error",
+              "value": "Missing required parameter: prompt",
+              "type": "string"
+            },
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Validation Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        460
+      ],
+      "id": "validation-error-node"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "X-Request-ID",
+                "value": "={{ $json.request_id || 'unknown' }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1780,
+        260
+      ],
+      "id": "respond-webhook-node"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Parameters": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Prepare Puppeteer Script",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Puppeteer Script": {
+      "main": [
+        [
+          {
+            "node": "Execute via Browserless",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute via Browserless": {
+      "main": [
+        [
+          {
+            "node": "Check Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Result": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Error": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "id": "ai-studio-http",
+      "name": "AI Studio HTTP API"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
