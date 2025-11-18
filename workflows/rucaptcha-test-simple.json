@@ -15,7 +15,7 @@
         "url": "https://api.rucaptcha.com/createTask",
         "sendBody": true,
         "contentType": "application/json",
-        "jsonBody": "={\n  \"clientKey\": \"5fffba5de3bed2317417f625985ec684\",\n  \"task\": {\n    \"type\": \"TurnstileTaskProxyless\",\n    \"websiteURL\": \"https://rucaptcha.com/demo/cloudflare-turnstile\",\n    \"websiteKey\": \"0x4AAAAAAADnPIDROzbs0Qj\"\n  }\n}",
+        "body": "={{ JSON.stringify({clientKey: '5fffba5de3bed2317417f625985ec684', task: {type: 'TurnstileTaskProxyless', websiteURL: 'https://rucaptcha.com/demo/cloudflare-turnstile', websiteKey: '0x4AAAAAAADnPIDROzbs0Qj'}}) }}",
         "options": {}
       },
       "id": "b1",
@@ -71,7 +71,7 @@
         "url": "https://api.rucaptcha.com/getTaskResult",
         "sendBody": true,
         "contentType": "application/json",
-        "jsonBody": "={\n  \"clientKey\": \"5fffba5de3bed2317417f625985ec684\",\n  \"taskId\": {{ $('Create Task').item.json.taskId }}\n}",
+        "body": "={{ JSON.stringify({clientKey: '5fffba5de3bed2317417f625985ec684', taskId: $('Create Task').item.json.taskId}) }}",
         "options": {}
       },
       "id": "e1",
