@@ -1,0 +1,282 @@
+{
+  "name": "Google AI Studio - Browserless with Authentication",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-studio-auth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        360
+      ],
+      "webhookId": "ai-studio-auth",
+      "id": "webhook-node"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "prompt",
+              "value": "Расскажи о квантовых компьютерах"
+            },
+            {
+              "name": "googleCookies",
+              "value": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        520
+      ],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt || $json.body?.prompt || \"Привет!\" }}",
+              "type": "string"
+            },
+            {
+              "id": "cookies",
+              "name": "googleCookies",
+              "value": "={{ $json.googleCookies || $json.body?.googleCookies || \"\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        360
+      ],
+      "id": "extract-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Подготавливаем cookies для browserless\nconst params = $input.item.json;\nconst cookiesString = params.googleCookies;\n\nlet cookiesArray = [];\n\n// Если cookies переданы как строка, парсим их\nif (cookiesString && cookiesString.trim()) {\n  try {\n    // Пробуем распарсить как JSON массив\n    cookiesArray = JSON.parse(cookiesString);\n  } catch (e) {\n    // Если не JSON, пробуем как строку формата Netscape/cookie.txt\n    const lines = cookiesString.split('\\n');\n    for (const line of lines) {\n      if (line.trim() && !line.startsWith('#')) {\n        const parts = line.split('\\t');\n        if (parts.length >= 7) {\n          cookiesArray.push({\n            name: parts[5],\n            value: parts[6],\n            domain: parts[0],\n            path: parts[2],\n            expires: parseInt(parts[4]) || -1,\n            httpOnly: parts[1] === 'TRUE',\n            secure: parts[3] === 'TRUE'\n          });\n        }\n      }\n    }\n  }\n}\n\nreturn {\n  json: {\n    prompt: params.prompt,\n    cookies: cookiesArray,\n    hasCookies: cookiesArray.length > 0\n  }\n};"
+      },
+      "name": "Prepare Cookies",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        360
+      ],
+      "id": "prepare-cookies-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/screenshot?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"https://aistudio.google.com/app/prompts/new_chat\",\n  \"options\": {\n    \"fullPage\": true,\n    \"type\": \"png\"\n  },\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle2\",\n    \"timeout\": 60000\n  },\n  \"cookies\": {{ $json.hasCookies ? JSON.stringify($json.cookies) : '[]' }}\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Open with Auth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        360
+      ],
+      "id": "open-auth-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "✅ Google AI Studio открыт с авторизацией!",
+              "type": "string"
+            },
+            {
+              "id": "authenticated",
+              "name": "authentication_used",
+              "value": "={{ $('Prepare Cookies').item.json.hasCookies }}",
+              "type": "boolean"
+            },
+            {
+              "id": "cookies_count",
+              "name": "cookies_count",
+              "value": "={{ $('Prepare Cookies').item.json.cookies.length }}",
+              "type": "number"
+            },
+            {
+              "id": "screenshot_available",
+              "name": "screenshot_available",
+              "value": "={{ $json.data ? true : false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "screenshot_size",
+              "name": "screenshot_size_bytes",
+              "value": "={{ $json.data ? $json.data.length : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "prompt",
+              "name": "original_prompt",
+              "value": "={{ $('Extract Parameters').item.json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "info",
+              "name": "info",
+              "value": "Для полной работы с авторизацией, экспортируйте cookies из браузера где вы авторизованы в Google AI Studio и передайте их в параметре googleCookies",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        360
+      ],
+      "id": "format-node"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1340,
+        360
+      ],
+      "id": "respond-node"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Parameters": {
+      "main": [
+        [
+          {
+            "node": "Prepare Cookies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Cookies": {
+      "main": [
+        [
+          {
+            "node": "Open with Auth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open with Auth": {
+      "main": [
+        [
+          {
+            "node": "Format Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "id": "ai-studio-auth",
+      "name": "AI Studio Auth"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
