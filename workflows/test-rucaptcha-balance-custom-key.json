@@ -1,0 +1,83 @@
+{
+  "name": "🔑 Test RuCaptcha Balance (Custom API Key)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "f7d8e9a0-b1c2-3d4e-5f6a-7b8c9d0e1f2a",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "apiKey",
+              "value": "d396c5612ec9c555c55d427f015921Z7"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-api-key-node-12345",
+      "name": "⚙️ SET YOUR API KEY HERE",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://rucaptcha.com/res.php?key={{ $json.apiKey }}&action=getbalance",
+        "options": {
+          "timeout": 30000,
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "http-request-balance-67890",
+      "name": "Check Balance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [690, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "⚙️ SET YOUR API KEY HERE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ SET YOUR API KEY HERE": {
+      "main": [
+        [
+          {
+            "node": "Check Balance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
