@@ -1,0 +1,226 @@
+{
+  "name": "2Captcha Turnstile RAW",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-raw",
+      "name": "START",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2captcha.com/createTask",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "clientKey",
+              "value": "5fffba5de3bed2317417f625985ec684"
+            },
+            {
+              "name": "task",
+              "value": "={\"type\":\"TurnstileTaskProxyless\",\"websiteURL\":\"https://claude.ai\",\"websiteKey\":\"0x4AAAAAAADnPIDROrmt1Wwj\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-raw",
+      "name": "Create Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.errorId }}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "check-raw-created",
+      "name": "Task Created?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    taskId: $input.first().json.taskId\n  }\n};"
+      },
+      "id": "save-raw-taskid",
+      "name": "Save Task ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "seconds"
+      },
+      "id": "wait-raw-10s",
+      "name": "Wait 10 sec",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1120, 500],
+      "webhookId": "wait-raw-10s"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2captcha.com/getTaskResult",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "clientKey",
+              "value": "5fffba5de3bed2317417f625985ec684"
+            },
+            {
+              "name": "taskId",
+              "value": "={{ $json.taskId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-raw-result",
+      "name": "Get Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equals",
+              "value2": "processing"
+            }
+          ]
+        }
+      },
+      "id": "check-raw-ready",
+      "name": "Not Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1560, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    taskId: $input.first().json.taskId\n  }\n};"
+      },
+      "id": "preserve-raw-taskid",
+      "name": "Preserve Task ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 400]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-raw-5s",
+      "name": "Wait 5 sec",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2000, 400],
+      "webhookId": "wait-raw-5s"
+    },
+    {
+      "parameters": {
+        "jsCode": "const solution = $input.first().json.solution;\n\nreturn {\n  json: {\n    success: true,\n    turnstile_token: solution.token,\n    userAgent: solution.userAgent,\n    cost: $input.first().json.cost,\n    message: \"Turnstile solved!\"\n  }\n};"
+      },
+      "id": "raw-success",
+      "name": "SUCCESS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 600]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ { \"success\": false, \"errorCode\": $json.errorCode, \"errorDescription\": $json.errorDescription, \"errorId\": $json.errorId, \"fullResponse\": $json } }}"
+      },
+      "id": "raw-error",
+      "name": "ERROR",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "START": {
+      "main": [[{"node": "Create Task", "type": "main", "index": 0}]]
+    },
+    "Create Task": {
+      "main": [[{"node": "Task Created?", "type": "main", "index": 0}]]
+    },
+    "Task Created?": {
+      "main": [
+        [{"node": "ERROR", "type": "main", "index": 0}],
+        [{"node": "Save Task ID", "type": "main", "index": 0}]
+      ]
+    },
+    "Save Task ID": {
+      "main": [[{"node": "Wait 10 sec", "type": "main", "index": 0}]]
+    },
+    "Wait 10 sec": {
+      "main": [[{"node": "Get Result", "type": "main", "index": 0}]]
+    },
+    "Get Result": {
+      "main": [[{"node": "Not Ready?", "type": "main", "index": 0}]]
+    },
+    "Not Ready?": {
+      "main": [
+        [{"node": "Preserve Task ID", "type": "main", "index": 0}],
+        [{"node": "SUCCESS", "type": "main", "index": 0}]
+      ]
+    },
+    "Preserve Task ID": {
+      "main": [[{"node": "Wait 5 sec", "type": "main", "index": 0}]]
+    },
+    "Wait 5 sec": {
+      "main": [[{"node": "Get Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
