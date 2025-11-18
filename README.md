@@ -36,7 +36,7 @@ https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automa
 **Импорт через URL:**
 
 ```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-http-api.json
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-simple.json
 ```
 
 **Как использовать:**

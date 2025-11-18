@@ -22,7 +22,7 @@
 ### 1. Импорт workflow
 
 ```
-https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-http-api.json
+https://raw.githubusercontent.com/ilya3211/n8n-workflow/claude/claude-n8n-automation-workflow-019ZyGaGbj3EVNbpj2hqt8ia/workflows/claude-browserless-simple.json
 ```
 
 **Шаги:**
@@ -99,10 +99,10 @@ Browserless:
    - `cfBmCookie` (замените на ваш)
    - `userPrompt` (текст запроса)
 
-3. **Browserless Function** - HTTP Request к Browserless API
-   - URL: `https://chrome.browserless.io/function?token=...`
-   - Body: JavaScript код для браузера
-   - Timeout: 180 секунд (3 минуты)
+3. **Call Browserless** - Code node с fetch() к Browserless API
+   - Формирует JSON запрос
+   - Отправляет код к Browserless через fetch()
+   - Получает результат
 
 4. **Format Result** - форматирование ответа
    - `status`: ✅ Success или ⚠️ Partial

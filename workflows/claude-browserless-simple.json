@@ -1,0 +1,150 @@
+{
+  "name": "Claude.AI via Browserless (Simple)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1b1b1b1-b1b1-b1b1-b1b1-b1b1b1b1b1b1",
+              "name": "browserlessToken",
+              "value": "2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+              "type": "string"
+            },
+            {
+              "id": "b2b2b2b2-b2b2-b2b2-b2b2-b2b2b2b2b2b2",
+              "name": "sessionKey",
+              "value": "YOUR_SESSION_KEY_HERE",
+              "type": "string"
+            },
+            {
+              "id": "b3b3b3b3-b3b3-b3b3-b3b3-b3b3b3b3b3b3",
+              "name": "cfBmCookie",
+              "value": "YOUR_CF_BM_COOKIE_HERE",
+              "type": "string"
+            },
+            {
+              "id": "b4b4b4b4-b4b4-b4b4-b4b4-b4b4b4b4b4b4",
+              "name": "userPrompt",
+              "value": "={{ $json.prompt || 'Привет! Как дела?' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b5b5b5b5-b5b5-b5b5-b5b5-b5b5b5b5b5b5",
+      "name": "Set Credentials",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const token = $input.first().json.browserlessToken;\nconst sessionKey = $input.first().json.sessionKey;\nconst cfBmCookie = $input.first().json.cfBmCookie;\nconst userPrompt = $input.first().json.userPrompt;\n\n// Код для выполнения в браузере\nconst browserCode = `\nmodule.exports = async ({ page }) => {\n  // Устанавливаем cookies\n  await page.setCookie(\n    {\n      name: 'sessionKey',\n      value: '${sessionKey}',\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    },\n    {\n      name: '__cf_bm',\n      value: '${cfBmCookie}',\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    }\n  );\n  \n  // Переходим на Claude.ai\n  await page.goto('https://claude.ai/new', {\n    waitUntil: 'networkidle2',\n    timeout: 30000\n  });\n  \n  // Ждем поле ввода\n  await page.waitForSelector('div[contenteditable=\"true\"]', { timeout: 15000 });\n  \n  // Вводим текст\n  await page.type('div[contenteditable=\"true\"]', \\`${userPrompt}\\`, { delay: 50 });\n  \n  // Пауза перед отправкой\n  await new Promise(r => setTimeout(r, 500));\n  \n  // Отправляем\n  await page.click('button[aria-label=\"Send Message\"]');\n  \n  // Ждем ответ\n  await page.waitForFunction(\n    () => {\n      const messages = document.querySelectorAll('[data-testid=\"message\"]');\n      const lastMessage = messages[messages.length - 1];\n      if (!lastMessage) return false;\n      \n      const isAssistant = lastMessage.querySelector('[data-testid=\"assistant-message\"]');\n      const hasContent = lastMessage.textContent.trim().length > 10;\n      const isLoading = document.querySelector('[data-testid=\"loading-indicator\"]');\n      \n      return isAssistant && hasContent && !isLoading;\n    },\n    { timeout: 120000, polling: 1000 }\n  );\n  \n  // Извлекаем ответ\n  const response = await page.evaluate(() => {\n    const messages = document.querySelectorAll('[data-testid=\"message\"]');\n    const lastMessage = messages[messages.length - 1];\n    \n    if (lastMessage) {\n      const assistantMsg = lastMessage.querySelector('[data-testid=\"assistant-message\"]');\n      if (assistantMsg) {\n        return assistantMsg.textContent.trim();\n      }\n    }\n    \n    return 'Ответ не найден';\n  });\n  \n  return {\n    success: true,\n    response: response,\n    prompt: \\`${userPrompt}\\`,\n    timestamp: new Date().toISOString()\n  };\n};\n`;\n\n// Отправляем запрос к Browserless\nconst url = `https://chrome.browserless.io/function?token=${token}`;\n\nconst response = await fetch(url, {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json'\n  },\n  body: JSON.stringify({\n    code: browserCode,\n    context: {}\n  })\n});\n\nif (!response.ok) {\n  throw new Error(`Browserless error: ${response.status} ${response.statusText}`);\n}\n\nconst result = await response.json();\n\nreturn [{ json: result }];"
+      },
+      "id": "c1c1c1c1-c1c1-c1c1-c1c1-c1c1c1c1c1c1",
+      "name": "Call Browserless",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1d1d1d1-d1d1-d1d1-d1d1-d1d1d1d1d1d1",
+              "name": "status",
+              "value": "={{ $json.success ? '✅ Success' : '⚠️ Partial' }}",
+              "type": "string"
+            },
+            {
+              "id": "d2d2d2d2-d2d2-d2d2-d2d2-d2d2d2d2d2d2",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "d3d3d3d3-d3d3-d3d3-d3d3-d3d3d3d3d3d3",
+              "name": "response",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4",
+              "name": "timestamp",
+              "value": "={{ $json.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "d5d5d5d5-d5d5-d5d5-d5d5-d5d5d5d5d5d5",
+              "name": "browser",
+              "value": "Browserless",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d6d6d6d6-d6d6-d6d6-d6d6-d6d6d6d6d6d6",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Credentials": {
+      "main": [
+        [
+          {
+            "node": "Call Browserless",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Browserless": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
