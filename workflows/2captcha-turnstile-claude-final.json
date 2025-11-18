@@ -1,0 +1,188 @@
+{
+  "name": "2Captcha Turnstile Claude.ai",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-2captcha-final",
+      "name": "START",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2captcha.com/createTask",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"clientKey\": \"5fffba5de3bed2317417f625985ec684\",\n  \"task\": {\n    \"type\": \"TurnstileTaskProxyless\",\n    \"websiteURL\": \"https://claude.ai\",\n    \"websiteKey\": \"0x4AAAAAAADnPIDROrmt1Wwj\"\n  }\n}",
+        "options": {}
+      },
+      "id": "create-task-final",
+      "name": "Create Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.errorId }}",
+              "operation": "equal",
+              "value2": 0
+            }
+          ]
+        }
+      },
+      "id": "check-created-final",
+      "name": "Task Created?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [680, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    taskId: $input.first().json.taskId\n  }\n};"
+      },
+      "id": "save-taskid-final",
+      "name": "Save Task ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "seconds"
+      },
+      "id": "wait-10s-final",
+      "name": "Wait 10 sec",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1120, 500],
+      "webhookId": "wait-10s-final"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.2captcha.com/getTaskResult",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"clientKey\": \"5fffba5de3bed2317417f625985ec684\",\n  \"taskId\": {{ JSON.stringify($json.taskId) }}\n}",
+        "options": {}
+      },
+      "id": "get-result-final",
+      "name": "Get Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equals",
+              "value2": "processing"
+            }
+          ]
+        }
+      },
+      "id": "check-ready-final",
+      "name": "Not Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1560, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    taskId: $input.first().json.taskId\n  }\n};"
+      },
+      "id": "preserve-taskid-final",
+      "name": "Preserve Task ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 400]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-5s-final",
+      "name": "Wait 5 sec",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2000, 400],
+      "webhookId": "wait-5s-final"
+    },
+    {
+      "parameters": {
+        "jsCode": "const solution = $input.first().json.solution;\n\nreturn {\n  json: {\n    success: true,\n    turnstile_token: solution.token,\n    userAgent: solution.userAgent,\n    cost: $input.first().json.cost,\n    message: \"Turnstile solved for Claude.ai\"\n  }\n};"
+      },
+      "id": "success-final",
+      "name": "SUCCESS",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 600]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ { \"success\": false, \"errorCode\": $json.errorCode, \"errorDescription\": $json.errorDescription, \"errorId\": $json.errorId } }}"
+      },
+      "id": "error-final",
+      "name": "ERROR",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "START": {
+      "main": [[{"node": "Create Task", "type": "main", "index": 0}]]
+    },
+    "Create Task": {
+      "main": [[{"node": "Task Created?", "type": "main", "index": 0}]]
+    },
+    "Task Created?": {
+      "main": [
+        [{"node": "ERROR", "type": "main", "index": 0}],
+        [{"node": "Save Task ID", "type": "main", "index": 0}]
+      ]
+    },
+    "Save Task ID": {
+      "main": [[{"node": "Wait 10 sec", "type": "main", "index": 0}]]
+    },
+    "Wait 10 sec": {
+      "main": [[{"node": "Get Result", "type": "main", "index": 0}]]
+    },
+    "Get Result": {
+      "main": [[{"node": "Not Ready?", "type": "main", "index": 0}]]
+    },
+    "Not Ready?": {
+      "main": [
+        [{"node": "Preserve Task ID", "type": "main", "index": 0}],
+        [{"node": "SUCCESS", "type": "main", "index": 0}]
+      ]
+    },
+    "Preserve Task ID": {
+      "main": [[{"node": "Wait 5 sec", "type": "main", "index": 0}]]
+    },
+    "Wait 5 sec": {
+      "main": [[{"node": "Get Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
