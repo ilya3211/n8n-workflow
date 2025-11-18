@@ -100,11 +100,11 @@ Browserless:
    - `cfBmCookie` (замените на ваш)
    - `userPrompt` (текст запроса)
 
-3. **Call Browserless** - Code node с axios к Browserless API
+3. **Call Browserless** - Code node со встроенным https модулем
    - Формирует JSON запрос
-   - Отправляет код к Browserless через axios
+   - Отправляет код к Browserless через https.request()
    - Получает результат
-   - Обработка ошибок
+   - Полная обработка ошибок и timeout
 
 4. **Format Result** - форматирование ответа
    - `status`: ✅ Success или ⚠️ Partial
