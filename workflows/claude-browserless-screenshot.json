@@ -1,0 +1,61 @@
+{
+  "name": "Claude.AI Screenshot Test",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const token = '2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac';\nconst sessionKey = 'YOUR_SESSION_KEY_HERE';\nconst cfBmCookie = 'YOUR_CF_BM_COOKIE_HERE';\n\nconst requestBody = {\n  url: 'https://claude.ai/new',\n  gotoOptions: {\n    waitUntil: 'networkidle2',\n    timeout: 90000\n  },\n  cookies: [\n    {\n      name: 'sessionKey',\n      value: sessionKey,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    },\n    {\n      name: '__cf_bm',\n      value: cfBmCookie,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    }\n  ],\n  options: {\n    fullPage: true,\n    type: 'png'\n  },\n  setJavaScriptEnabled: true,\n  bestAttempt: true,\n  waitFor: 10000\n};\n\nreturn [{json: {\n  url: `https://production-sfo.browserless.io/screenshot?token=${token}&stealth&blockAds`,\n  body: JSON.stringify(requestBody)\n}}];"
+      },
+      "id": "b1",
+      "name": "Prepare Screenshot Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "contentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 180000,
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "c1",
+      "name": "Get Screenshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Prepare Screenshot Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Screenshot Request": {
+      "main": [[{"node": "Get Screenshot", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
