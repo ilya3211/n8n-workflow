@@ -1,0 +1,249 @@
+{
+  "name": "Extract Sitekey Claude Advanced",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "browserless-token",
+              "name": "browserlessToken",
+              "value": "={{ $env.BROWSERLESS_TOKEN || 'YOUR_BROWSERLESS_TOKEN' }}",
+              "type": "string"
+            },
+            {
+              "id": "target-url",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            },
+            {
+              "id": "wait-time",
+              "name": "waitTime",
+              "value": "5000",
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "id": "set-parameters-node",
+      "name": "Set Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chrome.browserless.io/function?token={{ $json.browserlessToken }}",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"code\": \"module.exports = async ({ page, context }) => {\\n  const { targetURL, waitTime } = context;\\n  \\n  try {\\n    // Store captured data\\n    let capturedData = null;\\n    \\n    // Intercept turnstile.render() call\\n    await page.evaluateOnNewDocument(() => {\\n      window.__turnstileData = null;\\n      \\n      // Override window.turnstile object\\n      Object.defineProperty(window, 'turnstile', {\\n        value: new Proxy({}, {\\n          get(target, prop) {\\n            if (prop === 'render') {\\n              return function(container, params) {\\n                console.log('[INTERCEPTED] Turnstile render called');\\n                console.log('[PARAMS]', JSON.stringify(params, null, 2));\\n                \\n                // Store the data\\n                window.__turnstileData = {\\n                  sitekey: params.sitekey || params['site-key'],\\n                  action: params.action,\\n                  cData: params.cData || params['c-data'],\\n                  chlPageData: params.chlPageData || params['chl-page-data'],\\n                  theme: params.theme,\\n                  language: params.language,\\n                  size: params.size,\\n                  callback: typeof params.callback,\\n                  allParams: params\\n                };\\n                \\n                // Return a dummy widget ID\\n                return 'intercepted-widget-id';\\n              };\\n            }\\n            return target[prop];\\n          }\\n        }),\\n        configurable: false\\n      });\\n    });\\n    \\n    // Navigate to target URL\\n    console.log(`[NAVIGATE] Going to ${targetURL}`);\\n    await page.goto(targetURL, {\\n      waitUntil: 'networkidle2',\\n      timeout: 30000\\n    });\\n    \\n    // Wait for turnstile to be called\\n    console.log(`[WAIT] Waiting ${waitTime}ms for Turnstile...`);\\n    await page.waitForTimeout(waitTime);\\n    \\n    // Extract the captured data\\n    capturedData = await page.evaluate(() => window.__turnstileData);\\n    \\n    if (!capturedData || !capturedData.sitekey) {\\n      // Fallback: try to find sitekey in page source\\n      console.log('[FALLBACK] Searching for sitekey in page source...');\\n      \\n      const pageContent = await page.content();\\n      const sitekeyMatch = pageContent.match(/sitekey[\\\\\\\"':\\\\s]+(6[a-zA-Z0-9_-]{39,})/i);\\n      \\n      if (sitekeyMatch) {\\n        capturedData = {\\n          sitekey: sitekeyMatch[1],\\n          action: 'login',\\n          method: 'page_source_extraction',\\n          pageURL: targetURL\\n        };\\n      }\\n    }\\n    \\n    if (!capturedData || !capturedData.sitekey) {\\n      throw new Error('Could not extract Turnstile sitekey');\\n    }\\n    \\n    // Prepare RuCaptcha API format\\n    const result = {\\n      success: true,\\n      data: {\\n        cloudflare_turnstile: {\\n          sitekey: capturedData.sitekey,\\n          pageurl: targetURL,\\n          action: capturedData.action || 'login',\\n          cData: capturedData.cData,\\n          chlPageData: capturedData.chlPageData\\n        },\\n        raw_data: capturedData,\\n        rucaptcha_request: {\\n          method: 'turnstile',\\n          sitekey: capturedData.sitekey,\\n          pageurl: targetURL,\\n          data: capturedData.cData,\\n          pagedata: capturedData.chlPageData,\\n          action: capturedData.action || 'login',\\n          json: 1\\n        }\\n      },\\n      extracted_at: new Date().toISOString(),\\n      target_url: targetURL\\n    };\\n    \\n    console.log('[SUCCESS] Turnstile data extracted:', JSON.stringify(result, null, 2));\\n    return result;\\n    \\n  } catch (error) {\\n    console.error('[ERROR]', error.message);\\n    return {\\n      success: false,\\n      error: error.message,\\n      stack: error.stack,\\n      target_url: targetURL\\n    };\\n  }\\n}\",\n  \"context\": {\n    \"targetURL\": \"{{ $json.targetURL }}\",\n    \"waitTime\": {{ $json.waitTime }}}\n}",
+        "options": {}
+      },
+      "id": "http-browserless-node",
+      "name": "Browserless Function",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "success-condition",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-success-node",
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-sitekey",
+              "name": "sitekey",
+              "value": "={{ $json.data.cloudflare_turnstile.sitekey }}",
+              "type": "string"
+            },
+            {
+              "id": "result-pageurl",
+              "name": "pageurl",
+              "value": "={{ $json.data.cloudflare_turnstile.pageurl }}",
+              "type": "string"
+            },
+            {
+              "id": "result-action",
+              "name": "action",
+              "value": "={{ $json.data.cloudflare_turnstile.action }}",
+              "type": "string"
+            },
+            {
+              "id": "result-rucaptcha",
+              "name": "rucaptcha_request",
+              "value": "={{ $json.data.rucaptcha_request }}",
+              "type": "object"
+            },
+            {
+              "id": "result-raw",
+              "name": "raw_turnstile_data",
+              "value": "={{ $json.data.raw_data }}",
+              "type": "object"
+            },
+            {
+              "id": "result-extracted",
+              "name": "extracted_at",
+              "value": "={{ $json.extracted_at }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "format-success-node",
+      "name": "Format Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-message",
+              "name": "error",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            },
+            {
+              "id": "error-stack",
+              "name": "error_stack",
+              "value": "={{ $json.stack }}",
+              "type": "string"
+            },
+            {
+              "id": "error-url",
+              "name": "target_url",
+              "value": "={{ $json.target_url }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "format-error-node",
+      "name": "Format Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 400]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Parameters": {
+      "main": [
+        [
+          {
+            "node": "Browserless Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Browserless Function": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "id": "turnstile-extraction",
+      "name": "turnstile"
+    }
+  ],
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "v1"
+}
