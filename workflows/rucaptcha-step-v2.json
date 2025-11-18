@@ -1,0 +1,40 @@
+{
+  "name": "RuCaptcha Step-by-Step v2",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger1",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/createTask",
+        "sendBody": true,
+        "contentType": "application/json",
+        "body": "={{ JSON.stringify({clientKey: '5fffba5de3bed2317417f625985ec684', task: {type: 'TurnstileTaskProxyless', websiteURL: 'https://rucaptcha.com/demo/cloudflare-turnstile', websiteKey: '0x4AAAAAAADnPIDROzbs0Qj'}}) }}",
+        "options": {}
+      },
+      "id": "http1",
+      "name": "Step 1 - Create Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [[{"node": "Step 1 - Create Task", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
