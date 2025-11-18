@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-claude-automation
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # n8n Configuration
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - WEBHOOK_URL=http://${N8N_HOST:-localhost}:5678/
+
+      # Puppeteer Configuration
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+      # n8n Basic Auth (опционально)
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE:-false}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD:-password}
+
+      # Timezone
+      - TZ=Europe/Moscow
+
+      # Community nodes
+      - N8N_COMMUNITY_PACKAGES_ENABLED=true
+
+    volumes:
+      # n8n data persistence
+      - n8n_data:/home/node/.n8n
+
+      # Workflows directory (для импорта)
+      - ./workflows:/workflows:ro
+
+    command: >
+      sh -c "
+        echo '🚀 Установка зависимостей...' &&
+        apk add --no-cache \
+          chromium \
+          nss \
+          freetype \
+          harfbuzz \
+          ca-certificates \
+          ttf-freefont \
+          nodejs \
+          npm &&
+        echo '📦 Установка n8n-nodes-puppeteer...' &&
+        npm install -g n8n-nodes-puppeteer &&
+        echo '✅ Зависимости установлены!' &&
+        echo '🌐 Запуск n8n...' &&
+        n8n start
+      "
+
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    labels:
+      - "traefik.enable=false"
+      - "com.n8n-workflow.description=n8n automation with Claude.AI"
+
+volumes:
+  n8n_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./n8n_data
+
+networks:
+  default:
+    name: n8n-network
