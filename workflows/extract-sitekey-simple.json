@@ -1,0 +1,158 @@
+{
+  "name": "Extract Cloudflare Turnstile Sitekey (Simple)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "⚙️ Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "settings",
+      "notes": "Измените targetURL на нужный сайт"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/content?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "url",
+              "value": "={{ $json.targetURL }}"
+            },
+            {
+              "name": "waitForTimeout",
+              "value": "5000"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "🌐 Get Page HTML",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "content",
+      "notes": "Получает HTML через Browserless.io"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Получаем HTML\nconst html = $input.item.json;\nconst targetURL = $('⚙️ Settings').item.json.targetURL;\n\nlet htmlContent = '';\nif (typeof html === 'string') {\n  htmlContent = html;\n} else if (html && typeof html === 'object') {\n  htmlContent = JSON.stringify(html);\n}\n\nconst result = {\n  success: false,\n  websiteURL: targetURL,\n  websiteKey: null,\n  captchaType: 'not_found',\n  searchMethods: []\n};\n\n// Метод 1: data-sitekey\nconst m1 = htmlContent.match(/data-sitekey\\s*=\\s*[\"']([0-9a-zA-Z_-]{10,100})[\"']/);\nif (m1 && m1[1]) {\n  result.success = true;\n  result.websiteKey = m1[1];\n  result.captchaType = 'standalone';\n  result.searchMethods.push('✅ data-sitekey attribute');\n  return result;\n}\nresult.searchMethods.push('❌ data-sitekey not found');\n\n// Метод 2: sitekey property\nconst m2 = htmlContent.match(/[\"']sitekey[\"']\\s*:\\s*[\"']([0-9a-zA-Z_-]{10,100})[\"']/);\nif (m2 && m2[1]) {\n  result.success = true;\n  result.websiteKey = m2[1];\n  result.captchaType = 'standalone';\n  result.searchMethods.push('✅ sitekey property');\n  return result;\n}\nresult.searchMethods.push('❌ sitekey property not found');\n\n// Метод 3: iframe src\nconst m3 = htmlContent.match(/challenges\\.cloudflare\\.com[^\"']*[?&]sitekey=([^&\"']+)/);\nif (m3 && m3[1]) {\n  result.success = true;\n  result.websiteKey = m3[1];\n  result.captchaType = 'standalone_iframe';\n  result.searchMethods.push('✅ iframe src');\n  return result;\n}\nresult.searchMethods.push('❌ iframe src not found');\n\n// Метод 4: 0x pattern\nconst m4 = htmlContent.match(/[\"'](0x[0-9a-zA-Z_-]{10,100})[\"']/);\nif (m4 && m4[1]) {\n  result.success = true;\n  result.websiteKey = m4[1];\n  result.captchaType = 'html_extraction';\n  result.searchMethods.push('✅ 0x pattern');\n  return result;\n}\nresult.searchMethods.push('❌ 0x pattern not found');\n\nresult.error = 'Sitekey not found';\nreturn result;"
+      },
+      "name": "🔍 Extract Sitekey",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "extract"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "✅ success",
+              "value": "={{ $json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "websiteKey",
+              "name": "🔑 websiteKey",
+              "value": "={{ $json.websiteKey }}",
+              "type": "string"
+            },
+            {
+              "id": "websiteURL",
+              "name": "🌐 websiteURL",
+              "value": "={{ $json.websiteURL }}",
+              "type": "string"
+            },
+            {
+              "id": "captchaType",
+              "name": "📋 captchaType",
+              "value": "={{ $json.captchaType }}",
+              "type": "string"
+            },
+            {
+              "id": "searchMethods",
+              "name": "🔍 searchMethods",
+              "value": "={{ $json.searchMethods }}",
+              "type": "object"
+            },
+            {
+              "id": "rucaptcha",
+              "name": "🤖 RuCaptcha Request",
+              "value": "={{ $json.success ? JSON.stringify({\n  clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $json.websiteURL,\n    websiteKey: $json.websiteKey\n  }\n}, null, 2) : 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "error",
+              "name": "❌ error",
+              "value": "={{ $json.error || null }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "📊 Final Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1120, 300],
+      "id": "result"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "⚙️ Settings", "type": "main", "index": 0}]]
+    },
+    "⚙️ Settings": {
+      "main": [[{"node": "🌐 Get Page HTML", "type": "main", "index": 0}]]
+    },
+    "🌐 Get Page HTML": {
+      "main": [[{"node": "🔍 Extract Sitekey", "type": "main", "index": 0}]]
+    },
+    "🔍 Extract Sitekey": {
+      "main": [[{"node": "📊 Final Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["browserless", "turnstile", "simple"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T18:50:00.000Z",
+  "versionId": ""
+}
