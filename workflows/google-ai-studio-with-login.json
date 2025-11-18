@@ -1,0 +1,248 @@
+{
+  "name": "Google AI Studio - Login & Password",
+  "nodes": [
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "email",
+              "value": "your-email@gmail.com"
+            },
+            {
+              "name": "password",
+              "value": "your-password"
+            },
+            {
+              "name": "prompt",
+              "value": "Расскажи кратко о квантовых компьютерах"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 360],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "email",
+              "name": "email",
+              "value": "={{ $json.email || $json.body?.email }}",
+              "type": "string"
+            },
+            {
+              "id": "password",
+              "name": "password",
+              "value": "={{ $json.password || $json.body?.password }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt || $json.body?.prompt || \"Привет!\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Credentials",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 360],
+      "id": "extract-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/function?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"code\": \"async ({ page, context }) => { const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms)); try { await page.goto('https://aistudio.google.com/', {waitUntil: 'networkidle2', timeout: 60000}); await sleep(3000); const signInButton = await page.$('a[href*=\\\"accounts.google.com\\\"]'); if (signInButton) { await signInButton.click(); await sleep(5000); } else { const buttons = await page.$$('button, a'); for (const btn of buttons) { const text = await page.evaluate(el => el.textContent, btn); if (text && (text.includes('Sign in') || text.includes('Войти') || text.includes('Get started'))) { await btn.click(); await sleep(5000); break; } } } await page.waitForSelector('input[type=\\\"email\\\"]', {timeout: 30000}); await page.type('input[type=\\\"email\\\"]', context.email, {delay: 100}); await sleep(1000); const nextButtons = await page.$$('button'); for (const btn of nextButtons) { const text = await page.evaluate(el => el.textContent, btn); if (text && (text.includes('Next') || text.includes('Далее'))) { await btn.click(); break; } } await sleep(5000); await page.waitForSelector('input[type=\\\"password\\\"]', {timeout: 30000}); await page.type('input[type=\\\"password\\\"]', context.password, {delay: 100}); await sleep(1000); const loginButtons = await page.$$('button'); for (const btn of loginButtons) { const text = await page.evaluate(el => el.textContent, btn); if (text && (text.includes('Next') || text.includes('Далее') || text.includes('Sign in') || text.includes('Войти'))) { await btn.click(); break; } } await sleep(15000); const currentUrl = page.url(); if (currentUrl.includes('accounts.google.com')) { const screenshot = await page.screenshot({fullPage: true, encoding: 'base64'}); return {success: false, error: 'Authentication failed or 2FA required', screenshot: screenshot, url: currentUrl}; } await page.goto('https://aistudio.google.com/app/prompts/new_chat', {waitUntil: 'networkidle2', timeout: 60000}); await sleep(10000); const inputSelectors = ['textarea', 'div[contenteditable=\\\"true\\\"]', '[contenteditable=\\\"true\\\"]']; let inputElement = null; for (const selector of inputSelectors) { const elements = await page.$$(selector); if (elements.length > 0) { inputElement = elements[0]; break; } } if (!inputElement) { const screenshot = await page.screenshot({fullPage: true, encoding: 'base64'}); return {success: false, error: 'Input field not found after login', screenshot: screenshot, url: page.url()}; } await inputElement.click(); await sleep(1000); await page.keyboard.type(context.prompt, {delay: 50}); await sleep(2000); await page.keyboard.press('Enter'); await sleep(30000); const aiResponse = await page.evaluate(() => { const selectors = ['div[class*=\\\"response\\\"]', 'div[class*=\\\"message\\\"]', 'pre', 'code', 'p']; for (const selector of selectors) { const elements = document.querySelectorAll(selector); if (elements.length > 0) { const lastEl = elements[elements.length - 1]; const text = lastEl.innerText || lastEl.textContent; if (text && text.length > 50) return text; } } return null; }); const screenshot = await page.screenshot({fullPage: true, encoding: 'base64'}); return {success: true, aiResponse: aiResponse || 'Response received but could not extract text', screenshot: screenshot, promptSent: true, authenticated: true}; } catch (error) { const screenshot = await page.screenshot({fullPage: true, encoding: 'base64'}); return {success: false, error: error.message, screenshot: screenshot}; } }\",\n  \"context\": {\n    \"email\": {{ JSON.stringify($json.email) }},\n    \"password\": {{ JSON.stringify($json.password) }},\n    \"prompt\": {{ JSON.stringify($json.prompt) }}\n  }\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "name": "Execute Login & Automation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 360],
+      "id": "execute-node"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-success",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [900, 360],
+      "id": "check-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "✅ Успешная авторизация и автоматизация!",
+              "type": "string"
+            },
+            {
+              "id": "ai_response",
+              "name": "ai_response",
+              "value": "={{ $json.aiResponse }}",
+              "type": "string"
+            },
+            {
+              "id": "screenshot",
+              "name": "screenshot_base64",
+              "value": "={{ $json.screenshot }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "original_prompt",
+              "value": "={{ $('Extract Credentials').item.json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "authenticated",
+              "name": "authenticated",
+              "value": "={{ $json.authenticated }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 260],
+      "id": "success-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error || 'Ошибка авторизации или автоматизации' }}",
+              "type": "string"
+            },
+            {
+              "id": "screenshot",
+              "name": "screenshot_base64",
+              "value": "={{ $json.screenshot }}",
+              "type": "string"
+            },
+            {
+              "id": "url",
+              "name": "current_url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "details",
+              "name": "error_details",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 460],
+      "id": "error-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json: $input.all()[0].json}];"
+      },
+      "name": "Return Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 360],
+      "id": "return-node"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Extract Credentials", "type": "main", "index": 0}]]
+    },
+    "Extract Credentials": {
+      "main": [[{"node": "Execute Login & Automation", "type": "main", "index": 0}]]
+    },
+    "Execute Login & Automation": {
+      "main": [[{"node": "Check Success", "type": "main", "index": 0}]]
+    },
+    "Check Success": {
+      "main": [
+        [{"node": "Format Success", "type": "main", "index": 0}],
+        [{"node": "Format Error", "type": "main", "index": 0}]
+      ]
+    },
+    "Format Success": {
+      "main": [[{"node": "Return Result", "type": "main", "index": 0}]]
+    },
+    "Format Error": {
+      "main": [[{"node": "Return Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "3"
+}
