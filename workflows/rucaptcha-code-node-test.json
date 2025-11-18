@@ -1,0 +1,36 @@
+{
+  "name": "RuCaptcha via Code Node",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Создаем задачу через fetch\nconst requestBody = {\n  clientKey: '5fffba5de3bed2317417f625985ec684',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: 'https://rucaptcha.com/demo/cloudflare-turnstile',\n    websiteKey: '0x4AAAAAAADnPIDROzbs0Qj'\n  }\n};\n\nconst response = await $http.post('https://api.rucaptcha.com/createTask', {\n  body: requestBody,\n  headers: {\n    'Content-Type': 'application/json'\n  }\n});\n\nreturn [{json: response}];"
+      },
+      "id": "code",
+      "name": "Create Task via Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [[{"node": "Create Task via Code", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
