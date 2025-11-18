@@ -1,0 +1,75 @@
+{
+  "name": "RuCaptcha Working Test",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "Start",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/createTask",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"clientKey\": \"5fffba5de3bed2317417f625985ec684\",\n  \"task\": {\n    \"type\": \"TurnstileTaskProxyless\",\n    \"websiteURL\": \"https://rucaptcha.com/demo/cloudflare-turnstile\",\n    \"websiteKey\": \"0x4AAAAAAADnPIDROzbs0Qj\"\n  }\n}",
+        "options": {}
+      },
+      "id": "create",
+      "name": "Create Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "amount": 10,
+        "unit": "seconds"
+      },
+      "id": "wait",
+      "name": "Wait 10s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [680, 300],
+      "webhookId": "wait-10s"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.rucaptcha.com/getTaskResult",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"clientKey\": \"5fffba5de3bed2317417f625985ec684\",\n  \"taskId\": \"{{ $('Create Task').item.json.taskId }}\"\n}",
+        "options": {}
+      },
+      "id": "get",
+      "name": "Get Result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [[{"node": "Create Task", "type": "main", "index": 0}]]
+    },
+    "Create Task": {
+      "main": [[{"node": "Wait 10s", "type": "main", "index": 0}]]
+    },
+    "Wait 10s": {
+      "main": [[{"node": "Get Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
