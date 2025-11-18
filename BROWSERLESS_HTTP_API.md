@@ -70,19 +70,24 @@ n8n → HTTP Request → Browserless API → Cloud Browser → Claude.AI → Res
 Ваш n8n отправляет JavaScript код на Browserless через HTTP POST:
 
 ```javascript
-POST https://chrome.browserless.io/function?token=YOUR_TOKEN
-Content-Type: application/json
+POST https://production-sfo.browserless.io/function?token=YOUR_TOKEN
+Content-Type: application/javascript
 
-{
-  "code": "module.exports = async ({ page }) => { ... }",
-  "context": {}
+export default async ({ page }) => {
+  // Ваш код автоматизации браузера
+  return { success: true, data: ... };
 }
 ```
+
+**ВАЖНО:** Browserless V2 требует:
+- ✅ ESM синтаксис: `export default` (не `module.exports`)
+- ✅ Content-Type: `application/javascript` (не `application/json`)
+- ✅ Региональный endpoint: `production-sfo.browserless.io` (не `chrome.browserless.io`)
 
 Browserless:
 1. Получает код
 2. Запускает Chrome в облаке
-3. Выполняет ваш код
+3. Выполяет ваш код
 4. Возвращает результат
 
 **Результат:** Вам не нужен ни Chrome, ни Puppeteer локально!
@@ -241,6 +246,25 @@ https://chrome.browserless.io/function?token=XXX&record=true
 ---
 
 ## 🐛 Troubleshooting
+
+### Error: "404 - Not Found" на /function endpoint
+
+```
+Причина: Неправильный синтаксис кода или Content-Type
+
+Решение:
+1. Используйте ESM синтаксис: export default async ({page}) => {}
+2. Установите Content-Type: application/javascript (не application/json)
+3. Проверьте endpoint: production-sfo.browserless.io (не chrome.browserless.io)
+```
+
+### Error: "Forbidden - legacy endpoint"
+
+```
+Причина: Используется старый endpoint chrome.browserless.io
+
+Решение: Обновите URL на production-sfo.browserless.io
+```
 
 ### Error: "Invalid token"
 
