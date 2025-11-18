@@ -14,9 +14,28 @@
         "method": "POST",
         "url": "https://api.rucaptcha.com/createTask",
         "sendBody": true,
-        "contentType": "application/json",
-        "body": "={{ JSON.stringify({clientKey: '5fffba5de3bed2317417f625985ec684', task: {type: 'TurnstileTaskProxyless', websiteURL: 'https://rucaptcha.com/demo/cloudflare-turnstile', websiteKey: '0x4AAAAAAADnPIDROzbs0Qj'}}) }}",
-        "options": {}
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "clientKey",
+              "value": "5fffba5de3bed2317417f625985ec684"
+            },
+            {
+              "name": "task",
+              "value": "={{ {type: 'TurnstileTaskProxyless', websiteURL: 'https://rucaptcha.com/demo/cloudflare-turnstile', websiteKey: '0x4AAAAAAADnPIDROzbs0Qj'} }}"
+            }
+          ]
+        },
+        "options": {
+          "headers": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "id": "http1",
       "name": "Step 1 - Create Task",
