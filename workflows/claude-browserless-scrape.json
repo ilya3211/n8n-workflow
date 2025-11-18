@@ -1,0 +1,70 @@
+{
+  "name": "Claude.AI via Browserless SCRAPE",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const token = '2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac';\nconst sessionKey = 'YOUR_SESSION_KEY_HERE';\nconst cfBmCookie = 'YOUR_CF_BM_COOKIE_HERE';\n\nconst requestBody = {\n  url: 'https://claude.ai/new',\n  elements: [{\n    selector: 'body'\n  }],\n  setCookies: [\n    {\n      name: 'sessionKey',\n      value: sessionKey,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    },\n    {\n      name: '__cf_bm',\n      value: cfBmCookie,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    }\n  ],\n  waitForTimeout: 8000\n};\n\nreturn [{json: {\n  url: `https://production-sfo.browserless.io/scrape?token=${token}&stealth=true`,\n  body: JSON.stringify(requestBody)\n}}];"
+      },
+      "id": "b1",
+      "name": "Prepare Scrape Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "contentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "id": "c1",
+      "name": "HTTP Request Scrape",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const result = $input.first().json;\n\nif (result.data && result.data[0]) {\n  const html = result.data[0].html || result.data[0].text || '';\n  \n  const hasCloudflare = html.includes('Just a moment') || html.includes('Checking your browser');\n  const hasLoginForm = html.includes('login') || html.includes('sign in');\n  const hasInputField = html.includes('contenteditable=\"true\"') || html.includes('placeholder');\n  \n  const titleMatch = html.match(/<title>(.*?)<\\/title>/);\n  const pageTitle = titleMatch ? titleMatch[1] : 'Unknown';\n  \n  return [{json: {\n    status: hasCloudflare ? '❌ Cloudflare' : (hasInputField ? '✅ Success' : '⚠️ Unknown'),\n    pageTitle: pageTitle,\n    hasCloudflare: hasCloudflare,\n    hasLoginForm: hasLoginForm,\n    hasInputField: hasInputField,\n    htmlLength: html.length,\n    preview: html.substring(0, 500),\n    fullData: result\n  }}];\n} else {\n  return [{json: {\n    status: '❓ Unexpected response',\n    result: result\n  }}];\n}"
+      },
+      "id": "d1",
+      "name": "Analyze Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Prepare Scrape Request", "type": "main", "index": 0}]]
+    },
+    "Prepare Scrape Request": {
+      "main": [[{"node": "HTTP Request Scrape", "type": "main", "index": 0}]]
+    },
+    "HTTP Request Scrape": {
+      "main": [[{"node": "Analyze Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-15T00:00:00.000Z",
+  "versionId": "1"
+}
