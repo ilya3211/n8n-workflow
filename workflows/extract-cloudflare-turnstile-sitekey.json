@@ -1,0 +1,207 @@
+{
+  "name": "Extract Cloudflare Turnstile Sitekey",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "manual-trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Set Target URL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "set-url",
+      "notes": "Измените URL на нужный сайт"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.targetURL }}",
+        "operation": "page",
+        "pageAction": "goto",
+        "waitUntil": "networkidle2",
+        "timeout": 30000
+      },
+      "name": "Puppeteer - Navigate",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "id": "puppeteer-navigate",
+      "notes": "Открывает целевую страницу"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "evaluate",
+        "functionCode": "() => {\n  return new Promise((resolve) => {\n    // Перехватываем turnstile.render для Challenge pages\n    window.captchaData = {};\n    \n    const checkInterval = setInterval(() => {\n      if (window.turnstile) {\n        clearInterval(checkInterval);\n        \n        // Перехватываем turnstile.render\n        const originalRender = window.turnstile.render;\n        window.turnstile.render = function(container, params) {\n          console.log('Turnstile render перехвачен:', params);\n          \n          // Сохраняем параметры\n          window.captchaData = {\n            type: 'challenge',\n            sitekey: params.sitekey,\n            action: params.action,\n            cData: params.cData,\n            chlPageData: params.chlPageData,\n            callback: params.callback ? 'found' : 'not found'\n          };\n          \n          // Вызываем оригинальный render\n          return originalRender.call(this, container, params);\n        };\n      }\n    }, 100);\n    \n    // Ждем 5 секунд для загрузки капчи\n    setTimeout(() => {\n      clearInterval(checkInterval);\n      resolve(true);\n    }, 5000);\n  });\n}"
+      },
+      "name": "Puppeteer - Inject Intercept Script",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "id": "puppeteer-inject",
+      "notes": "Перехватывает вызов turnstile.render"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "waitForTimeout",
+        "timeout": 3000
+      },
+      "name": "Puppeteer - Wait for Turnstile",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "id": "puppeteer-wait",
+      "notes": "Ожидание загрузки виджета Turnstile"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "evaluate",
+        "functionCode": "() => {\n  const result = {\n    url: window.location.href,\n    userAgent: navigator.userAgent,\n    timestamp: new Date().toISOString(),\n    turnstileData: null,\n    sitekey: null,\n    type: 'unknown'\n  };\n  \n  // Проверяем перехваченные данные из Challenge page\n  if (window.captchaData && window.captchaData.sitekey) {\n    result.turnstileData = window.captchaData;\n    result.sitekey = window.captchaData.sitekey;\n    result.type = 'challenge_page';\n    return result;\n  }\n  \n  // Ищем Standalone Captcha виджет\n  const turnstileElements = [\n    document.querySelector('[data-sitekey]'),\n    document.querySelector('iframe[src*=\"challenges.cloudflare.com\"]'),\n    document.querySelector('div[id*=\"turnstile\"]'),\n    document.querySelector('div[class*=\"turnstile\"]'),\n    document.querySelector('div[class*=\"cf-turnstile\"]')\n  ];\n  \n  for (const element of turnstileElements) {\n    if (element) {\n      const sitekey = element.getAttribute('data-sitekey') || \n                     element.getAttribute('sitekey');\n      \n      if (sitekey) {\n        result.sitekey = sitekey;\n        result.type = 'standalone';\n        result.elementInfo = {\n          tagName: element.tagName,\n          className: element.className,\n          id: element.id\n        };\n        return result;\n      }\n      \n      // Проверяем iframe\n      if (element.tagName === 'IFRAME') {\n        const src = element.getAttribute('src');\n        const sitekeyMatch = src ? src.match(/sitekey=([^&]+)/) : null;\n        if (sitekeyMatch) {\n          result.sitekey = sitekeyMatch[1];\n          result.type = 'standalone_iframe';\n          return result;\n        }\n      }\n    }\n  }\n  \n  // Ищем в HTML коде страницы\n  const htmlContent = document.documentElement.innerHTML;\n  const sitekeyMatches = [\n    htmlContent.match(/data-sitekey=[\"']([^\"']+)[\"']/),\n    htmlContent.match(/sitekey:[\\s]*[\"']([^\"']+)[\"']/),\n    htmlContent.match(/[\"']sitekey[\"'][\\s]*:[\\s]*[\"']([^\"']+)[\"']/)\n  ];\n  \n  for (const match of sitekeyMatches) {\n    if (match && match[1]) {\n      result.sitekey = match[1];\n      result.type = 'html_extraction';\n      return result;\n    }\n  }\n  \n  // Ничего не найдено\n  result.error = 'Sitekey not found on page';\n  return result;\n}"
+      },
+      "name": "Puppeteer - Extract Sitekey",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1340, 300],
+      "id": "puppeteer-extract",
+      "notes": "Извлекает sitekey и параметры"
+    },
+    {
+      "parameters": {
+        "operation": "page",
+        "pageAction": "screenshot",
+        "fullPage": false,
+        "screenshotOptions": "{\"encoding\": \"base64\"}"
+      },
+      "name": "Puppeteer - Screenshot",
+      "type": "n8n-nodes-puppeteer.puppeteer",
+      "typeVersion": 1,
+      "position": [1560, 300],
+      "id": "puppeteer-screenshot",
+      "notes": "Опционально: скриншот страницы"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": "={{ $('Puppeteer - Extract Sitekey').item.json.sitekey ? true : false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "captcha_type",
+              "name": "captchaType",
+              "value": "={{ $('Puppeteer - Extract Sitekey').item.json.type }}",
+              "type": "string"
+            },
+            {
+              "id": "website_url",
+              "name": "websiteURL",
+              "value": "={{ $('Puppeteer - Extract Sitekey').item.json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "sitekey",
+              "name": "websiteKey",
+              "value": "={{ $('Puppeteer - Extract Sitekey').item.json.sitekey }}",
+              "type": "string"
+            },
+            {
+              "id": "user_agent",
+              "name": "userAgent",
+              "value": "={{ $('Puppeteer - Extract Sitekey').item.json.userAgent }}",
+              "type": "string"
+            },
+            {
+              "id": "action",
+              "name": "action",
+              "value": "={{ $('Puppeteer - Extract Sitekey').item.json.turnstileData?.action || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "data",
+              "name": "data",
+              "value": "={{ $('Puppeteer - Extract Sitekey').item.json.turnstileData?.cData || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "pagedata",
+              "name": "pagedata",
+              "value": "={{ $('Puppeteer - Extract Sitekey').item.json.turnstileData?.chlPageData || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "api_request",
+              "name": "rucaptchaAPIRequest",
+              "value": "={{ JSON.stringify({\n  clientKey: 'YOUR_API_KEY',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $('Puppeteer - Extract Sitekey').item.json.url,\n    websiteKey: $('Puppeteer - Extract Sitekey').item.json.sitekey,\n    action: $('Puppeteer - Extract Sitekey').item.json.turnstileData?.action || undefined,\n    data: $('Puppeteer - Extract Sitekey').item.json.turnstileData?.cData || undefined,\n    pagedata: $('Puppeteer - Extract Sitekey').item.json.turnstileData?.chlPageData || undefined\n  }\n}, null, 2) }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Format Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1780, 300],
+      "id": "format-result",
+      "notes": "Форматирует данные для RuCaptcha API"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Set Target URL", "type": "main", "index": 0}]]
+    },
+    "Set Target URL": {
+      "main": [[{"node": "Puppeteer - Navigate", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Navigate": {
+      "main": [[{"node": "Puppeteer - Inject Intercept Script", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Inject Intercept Script": {
+      "main": [[{"node": "Puppeteer - Wait for Turnstile", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Wait for Turnstile": {
+      "main": [[{"node": "Puppeteer - Extract Sitekey", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Extract Sitekey": {
+      "main": [[{"node": "Puppeteer - Screenshot", "type": "main", "index": 0}]]
+    },
+    "Puppeteer - Screenshot": {
+      "main": [[{"node": "Format Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["cloudflare", "turnstile", "captcha", "extraction"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T16:45:00.000Z",
+  "versionId": ""
+}
