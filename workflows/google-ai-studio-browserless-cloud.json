@@ -1,0 +1,491 @@
+{
+  "name": "Google AI Studio - Browserless Cloud (browserless.io)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-studio-cloud",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        360
+      ],
+      "webhookId": "ai-studio-cloud-webhook",
+      "id": "webhook-node"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "prompt",
+              "value": "Расскажи кратко о квантовых компьютерах"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        520
+      ],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt || $json.body?.prompt || \"Привет! Расскажи о себе.\" }}",
+              "type": "string"
+            },
+            {
+              "id": "browserlessUrl",
+              "name": "browserlessUrl",
+              "value": "https://chrome.browserless.io",
+              "type": "string"
+            },
+            {
+              "id": "browserlessToken",
+              "name": "browserlessToken",
+              "value": "2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+              "type": "string"
+            },
+            {
+              "id": "requestId",
+              "name": "requestId",
+              "value": "={{ $now.toUnixInteger() }}-{{ Math.random().toString(36).substring(7) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        360
+      ],
+      "id": "extract-params-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.browserlessUrl }}/scrape?token={{ $json.browserlessToken }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"https://aistudio.google.com/app/prompts/new_chat\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle2\",\n    \"timeout\": 60000\n  },\n  \"waitFor\": 5000,\n  \"elements\": [\n    {\n      \"selector\": \"body\"\n    },\n    {\n      \"selector\": \"textarea, div[contenteditable='true']\"\n    }\n  ]\n}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "name": "Step 1 - Open AI Studio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        360
+      ],
+      "id": "step1-node",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const params = $('Extract Parameters').item.json;\nconst scrapedData = $json;\n\n// Проверяем что страница открылась\nconst pageOpened = scrapedData.data && scrapedData.data.length > 0;\n\nreturn {\n  json: {\n    success: pageOpened,\n    message: pageOpened ? 'Google AI Studio opened successfully' : 'Failed to open page',\n    elementsFound: scrapedData.data ? scrapedData.data.length : 0,\n    prompt: params.prompt,\n    browserlessUrl: params.browserlessUrl,\n    browserlessToken: params.browserlessToken,\n    requestId: params.requestId\n  }\n};"
+      },
+      "name": "Check Page Loaded",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        360
+      ],
+      "id": "check-page-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "const params = $input.item.json;\n\n// Создаем функцию для Browserless /function endpoint\nconst code = `\nmodule.exports = async ({ page }) => {\n  try {\n    console.log('Navigating to Google AI Studio...');\n    \n    // Переходим на страницу\n    await page.goto('https://aistudio.google.com/app/prompts/new_chat', {\n      waitUntil: 'networkidle2',\n      timeout: 60000\n    });\n    \n    console.log('Page loaded, waiting for elements...');\n    await page.waitForTimeout(8000);\n    \n    // Ищем поле ввода\n    const inputSelectors = [\n      'textarea',\n      'div[contenteditable=\"true\"]',\n      '[contenteditable=\"true\"]',\n      'textarea[placeholder]',\n      'input[type=\"text\"]'\n    ];\n    \n    let inputElement = null;\n    for (const selector of inputSelectors) {\n      try {\n        const elements = await page.$$(selector);\n        if (elements.length > 0) {\n          inputElement = elements[0];\n          console.log('Found input:', selector);\n          break;\n        }\n      } catch (e) {\n        continue;\n      }\n    }\n    \n    if (!inputElement) {\n      return {\n        success: false,\n        error: 'Input field not found',\n        pageTitle: await page.title(),\n        pageUrl: page.url()\n      };\n    }\n    \n    // Вводим промпт\n    const promptText = \"${params.prompt.replace(/\"/g, '\\\\\"').replace(/\\n/g, ' ')}\";\n    console.log('Typing prompt:', promptText);\n    \n    await inputElement.click();\n    await page.waitForTimeout(500);\n    await inputElement.type(promptText, { delay: 50 });\n    await page.waitForTimeout(1000);\n    \n    // Ищем кнопку отправки\n    const buttonSelectors = [\n      'button[aria-label*=\"Send\"]',\n      'button[aria-label*=\"Run\"]',\n      'button[type=\"submit\"]',\n      'button'\n    ];\n    \n    let submitButton = null;\n    for (const selector of buttonSelectors) {\n      try {\n        const buttons = await page.$$(selector);\n        for (const btn of buttons) {\n          const text = await page.evaluate(el => el.textContent, btn);\n          const ariaLabel = await page.evaluate(el => el.getAttribute('aria-label'), btn);\n          if (text && (text.includes('Send') || text.includes('Run') || ariaLabel && ariaLabel.includes('Send'))) {\n            submitButton = btn;\n            console.log('Found submit button');\n            break;\n          }\n        }\n        if (submitButton) break;\n      } catch (e) {\n        continue;\n      }\n    }\n    \n    if (submitButton) {\n      await submitButton.click();\n      console.log('Submit button clicked');\n    } else {\n      // Пробуем Enter\n      await page.keyboard.press('Enter');\n      console.log('Pressed Enter');\n    }\n    \n    // Ждем ответа\n    console.log('Waiting for response...');\n    await page.waitForTimeout(15000);\n    \n    // Ищем ответ AI\n    const responseSelectors = [\n      'div[class*=\"response\"]',\n      'div[class*=\"message\"]',\n      'div[data-message-author-role=\"assistant\"]',\n      'pre',\n      'code'\n    ];\n    \n    let aiResponse = '';\n    for (const selector of responseSelectors) {\n      try {\n        const elements = await page.$$(selector);\n        if (elements.length > 0) {\n          const lastElement = elements[elements.length - 1];\n          const text = await page.evaluate(el => el.innerText || el.textContent, lastElement);\n          if (text && text.length > 20) {\n            aiResponse = text;\n            console.log('Found AI response');\n            break;\n          }\n        }\n      } catch (e) {\n        continue;\n      }\n    }\n    \n    // Делаем скриншот\n    const screenshot = await page.screenshot({\n      fullPage: true,\n      encoding: 'base64'\n    });\n    \n    return {\n      success: true,\n      response: aiResponse || 'Response not found (page might still be loading)',\n      screenshot: screenshot,\n      pageTitle: await page.title(),\n      pageUrl: page.url(),\n      inputFound: true,\n      buttonFound: !!submitButton\n    };\n    \n  } catch (error) {\n    return {\n      success: false,\n      error: error.message,\n      stack: error.stack\n    };\n  }\n};\n`;\n\nreturn {\n  json: {\n    code: code,\n    context: {\n      prompt: params.prompt,\n      requestId: params.requestId\n    },\n    browserlessUrl: params.browserlessUrl,\n    browserlessToken: params.browserlessToken\n  }\n};"
+      },
+      "name": "Prepare Automation Code",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        360
+      ],
+      "id": "prepare-code-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.browserlessUrl }}/function?token={{ $json.browserlessToken }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"code\": {{ JSON.stringify($json.code) }},\n  \"context\": {{ JSON.stringify($json.context) }}\n}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "name": "Step 2 - Execute Automation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        360
+      ],
+      "id": "execute-automation-node",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-success",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [
+        1560,
+        360
+      ],
+      "id": "check-success-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "Google AI Studio automation completed via Browserless Cloud",
+              "type": "string"
+            },
+            {
+              "id": "response",
+              "name": "ai_response",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "screenshot_base64",
+              "name": "screenshot_base64",
+              "value": "={{ $json.screenshot }}",
+              "type": "string"
+            },
+            {
+              "id": "page_title",
+              "name": "page_title",
+              "value": "={{ $json.pageTitle }}",
+              "type": "string"
+            },
+            {
+              "id": "page_url",
+              "name": "page_url",
+              "value": "={{ $json.pageUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "input_found",
+              "name": "input_found",
+              "value": "={{ $json.inputFound }}",
+              "type": "boolean"
+            },
+            {
+              "id": "button_found",
+              "name": "button_found",
+              "value": "={{ $json.buttonFound }}",
+              "type": "boolean"
+            },
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{ $('Extract Parameters').item.json.requestId }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "original_prompt",
+              "value": "={{ $('Extract Parameters').item.json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "automation_method",
+              "name": "automation_method",
+              "value": "browserless-cloud-function-api",
+              "type": "string"
+            },
+            {
+              "id": "browserless_service",
+              "name": "browserless_service",
+              "value": "browserless.io (cloud)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1780,
+        260
+      ],
+      "id": "format-success-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error || 'Automation failed' }}",
+              "type": "string"
+            },
+            {
+              "id": "error_details",
+              "name": "error_details",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "request_id",
+              "name": "request_id",
+              "value": "={{ $('Extract Parameters').item.json.requestId }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1780,
+        460
+      ],
+      "id": "format-error-node"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "X-Request-ID",
+                "value": "={{ $json.request_id || 'unknown' }}"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        360
+      ],
+      "id": "respond-webhook-node"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Parameters": {
+      "main": [
+        [
+          {
+            "node": "Step 1 - Open AI Studio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 1 - Open AI Studio": {
+      "main": [
+        [
+          {
+            "node": "Check Page Loaded",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Page Loaded": {
+      "main": [
+        [
+          {
+            "node": "Prepare Automation Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Automation Code": {
+      "main": [
+        [
+          {
+            "node": "Step 2 - Execute Automation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Step 2 - Execute Automation": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "id": "ai-studio-cloud",
+      "name": "AI Studio Cloud"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
