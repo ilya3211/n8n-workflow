@@ -1,0 +1,204 @@
+{
+  "name": "Google AI Studio - Step by Step",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 360],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "email",
+              "name": "email",
+              "value": "your-email@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "password",
+              "name": "password",
+              "value": "your-password",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "Расскажи кратко о квантовых компьютерах",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Credentials",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 360],
+      "id": "set-credentials-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/content?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"https://aistudio.google.com/app/prompts/new_chat\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle2\",\n    \"timeout\": 60000\n  }\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Step 1: Open Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 360],
+      "id": "step1-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.item.json;\nconst needsLogin = typeof html === 'string' && (html.includes('Sign in') || html.includes('accounts.google.com') || !html.includes('new_chat'));\n\nreturn [{\n  json: {\n    needsLogin: needsLogin,\n    email: $('Set Credentials').item.json.email,\n    password: $('Set Credentials').item.json.password,\n    prompt: $('Set Credentials').item.json.prompt,\n    pageContent: html\n  }\n}];"
+      },
+      "name": "Check If Login Needed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 360],
+      "id": "check-login-node"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "needs-login",
+              "leftValue": "={{ $json.needsLogin }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "If Login Required",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.1,
+      "position": [1120, 360],
+      "id": "if-login-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/screenshot?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"https://accounts.google.com/ServiceLogin?service=wise&continue=https://aistudio.google.com/app/prompts/new_chat\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle2\",\n    \"timeout\": 60000\n  },\n  \"options\": {\n    \"fullPage\": true,\n    \"type\": \"png\"\n  },\n  \"waitFor\": 5000\n}",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "name": "Login Screenshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 260],
+      "id": "login-screenshot-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result",
+              "name": "result",
+              "value": "={{ $json.pageContent }}",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "name": "status",
+              "value": "Already logged in - page loaded",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Already Logged In",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1340, 460],
+      "id": "already-logged-node"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json: $input.all()[0].json}];"
+      },
+      "name": "Merge Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1560, 360],
+      "id": "merge-node"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Set Credentials", "type": "main", "index": 0}]]
+    },
+    "Set Credentials": {
+      "main": [[{"node": "Step 1: Open Page", "type": "main", "index": 0}]]
+    },
+    "Step 1: Open Page": {
+      "main": [[{"node": "Check If Login Needed", "type": "main", "index": 0}]]
+    },
+    "Check If Login Needed": {
+      "main": [[{"node": "If Login Required", "type": "main", "index": 0}]]
+    },
+    "If Login Required": {
+      "main": [
+        [{"node": "Login Screenshot", "type": "main", "index": 0}],
+        [{"node": "Already Logged In", "type": "main", "index": 0}]
+      ]
+    },
+    "Login Screenshot": {
+      "main": [[{"node": "Merge Results", "type": "main", "index": 0}]]
+    },
+    "Already Logged In": {
+      "main": [[{"node": "Merge Results", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "5"
+}
