@@ -1,0 +1,234 @@
+{
+  "name": "🚀 RuCaptcha PRO - С настройками",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-001",
+      "name": "▶️ START",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 500]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "apiKey",
+              "value": "5fffba5de3bed2317417f625985ec684"
+            },
+            {
+              "name": "siteKey",
+              "value": "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-"
+            },
+            {
+              "name": "pageUrl",
+              "value": "https://www.google.com/recaptcha/api2/demo"
+            }
+          ],
+          "number": [
+            {
+              "name": "maxRetries",
+              "value": 10
+            },
+            {
+              "name": "currentRetry",
+              "value": 0
+            }
+          ]
+        }
+      },
+      "id": "config-node",
+      "name": "⚙️ Настройки",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rucaptcha.com/in.php",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $json.apiKey }}"
+            },
+            {
+              "name": "method",
+              "value": "userrecaptcha"
+            },
+            {
+              "name": "googlekey",
+              "value": "={{ $json.siteKey }}"
+            },
+            {
+              "name": "pageurl",
+              "value": "={{ $json.pageUrl }}"
+            },
+            {
+              "name": "json",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-task",
+      "name": "1️⃣ Создать задачу",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equal",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "id": "check-task-created",
+      "name": "✅ Задача создана?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "id": "wait-5s",
+      "name": "⏱️ Ждем 5 сек",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1120, 600],
+      "webhookId": "webhook-wait-5s"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://rucaptcha.com/res.php?key={{ $('⚙️ Настройки').item.json.apiKey }}&action=get&id={{ $json.request }}&json=1",
+        "options": {}
+      },
+      "id": "get-result",
+      "name": "2️⃣ Получить результат",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1340, 600]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.status }}",
+              "operation": "equal",
+              "value2": 1
+            }
+          ]
+        }
+      },
+      "id": "check-ready",
+      "name": "✅ Готово?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1560, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "const currentRetry = $input.first().json.currentRetry || 0;\nconst maxRetries = $('⚙️ Настройки').item.json.maxRetries;\n\nif (currentRetry >= maxRetries) {\n  throw new Error('Превышено максимальное количество попыток: ' + maxRetries);\n}\n\nreturn {\n  json: {\n    ...items[0].json,\n    currentRetry: currentRetry + 1,\n    request: $('1️⃣ Создать задачу').item.json.request\n  }\n};"
+      },
+      "id": "increment-retry",
+      "name": "🔄 Попытка +1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1780, 500]
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "id": "wait-3s",
+      "name": "⏱️ Ждем 3 сек",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [2000, 500],
+      "webhookId": "webhook-wait-3s"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\n  \"success\": true,\n  \"captcha_token\": $json.request,\n  \"attempts\": $('⚙️ Настройки').item.json.currentRetry || 0,\n  \"message\": \"Капча успешно решена!\"\n} }}"
+      },
+      "id": "success-output",
+      "name": "🎉 УСПЕХ",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1780, 700]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ {\n  \"success\": false,\n  \"error\": $json.error || \"Ошибка создания задачи\",\n  \"errorCode\": $json.request || \"UNKNOWN\"\n} }}"
+      },
+      "id": "error-output",
+      "name": "❌ ОШИБКА",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 400]
+    }
+  ],
+  "connections": {
+    "▶️ START": {
+      "main": [[{"node": "⚙️ Настройки", "type": "main", "index": 0}]]
+    },
+    "⚙️ Настройки": {
+      "main": [[{"node": "1️⃣ Создать задачу", "type": "main", "index": 0}]]
+    },
+    "1️⃣ Создать задачу": {
+      "main": [[{"node": "✅ Задача создана?", "type": "main", "index": 0}]]
+    },
+    "✅ Задача создана?": {
+      "main": [
+        [{"node": "❌ ОШИБКА", "type": "main", "index": 0}],
+        [{"node": "⏱️ Ждем 5 сек", "type": "main", "index": 0}]
+      ]
+    },
+    "⏱️ Ждем 5 сек": {
+      "main": [[{"node": "2️⃣ Получить результат", "type": "main", "index": 0}]]
+    },
+    "2️⃣ Получить результат": {
+      "main": [[{"node": "✅ Готово?", "type": "main", "index": 0}]]
+    },
+    "✅ Готово?": {
+      "main": [
+        [{"node": "🔄 Попытка +1", "type": "main", "index": 0}],
+        [{"node": "🎉 УСПЕХ", "type": "main", "index": 0}]
+      ]
+    },
+    "🔄 Попытка +1": {
+      "main": [[{"node": "⏱️ Ждем 3 сек", "type": "main", "index": 0}]]
+    },
+    "⏱️ Ждем 3 сек": {
+      "main": [[{"node": "2️⃣ Получить результат", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
