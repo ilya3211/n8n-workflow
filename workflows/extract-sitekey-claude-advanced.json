@@ -1,0 +1,178 @@
+{
+  "name": "Extract Claude.AI Turnstile Sitekey (Advanced)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            },
+            {
+              "id": "waitTime",
+              "name": "waitTime",
+              "value": 3000,
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "name": "⚙️ Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "settings",
+      "notes": "Настройки для извлечения sitekey из Claude.AI"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/function?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  code: `async ({ page, context }) => {\n    const { targetURL, waitTime } = context;\n    \n    try {\n      // Intercept turnstile.render() call\n      await page.evaluateOnNewDocument(() => {\n        window.captchaData = {};\n        window.captchaIntercepted = false;\n        \n        // Check for turnstile object\n        const checkInterval = setInterval(() => {\n          if (window.turnstile && !window.captchaIntercepted) {\n            clearInterval(checkInterval);\n            window.captchaIntercepted = true;\n            \n            const originalRender = window.turnstile.render;\n            window.turnstile.render = function(container, params) {\n              window.captchaData = {\n                type: 'challenge_page',\n                sitekey: params.sitekey,\n                action: params.action || null,\n                cData: params.cData || null,\n                chlPageData: params.chlPageData || null,\n                intercepted: true,\n                timestamp: new Date().toISOString()\n              };\n              return originalRender.call(this, container, params);\n            };\n          }\n        }, 50);\n      });\n      \n      // Navigate to page\n      await page.goto(targetURL, { \n        waitUntil: 'networkidle2', \n        timeout: 30000 \n      });\n      \n      // Wait for page to load\n      await page.waitForTimeout(waitTime);\n      \n      // Extract data from page\n      const result = await page.evaluate(() => {\n        const data = {\n          success: false,\n          url: window.location.href,\n          userAgent: navigator.userAgent,\n          timestamp: new Date().toISOString(),\n          captchaType: 'not_found',\n          sitekey: null,\n          action: null,\n          cData: null,\n          chlPageData: null,\n          searchMethods: []\n        };\n        \n        // Method 1: Check intercepted turnstile.render() call\n        if (window.captchaData && window.captchaData.intercepted && window.captchaData.sitekey) {\n          data.success = true;\n          data.captchaType = 'challenge_page';\n          data.sitekey = window.captchaData.sitekey;\n          data.action = window.captchaData.action;\n          data.cData = window.captchaData.cData;\n          data.chlPageData = window.captchaData.chlPageData;\n          data.searchMethods.push('✅ turnstile.render() intercepted');\n          return data;\n        }\n        data.searchMethods.push('❌ turnstile.render() - not intercepted');\n        \n        // Method 2: Check DOM for data-sitekey\n        const selectors = [\n          '[data-sitekey]',\n          '[sitekey]',\n          'div[class*=\"turnstile\"]',\n          'iframe[src*=\"challenges.cloudflare.com\"]'\n        ];\n        \n        for (const selector of selectors) {\n          try {\n            const element = document.querySelector(selector);\n            if (element) {\n              const sk = element.getAttribute('data-sitekey') || element.getAttribute('sitekey');\n              if (sk && sk.length > 10) {\n                data.success = true;\n                data.captchaType = 'standalone';\n                data.sitekey = sk;\n                data.searchMethods.push('✅ DOM selector: ' + selector);\n                return data;\n              }\n              \n              // Check iframe src\n              if (element.tagName === 'IFRAME') {\n                const src = element.getAttribute('src');\n                if (src) {\n                  const match = src.match(/[?&]sitekey=([^&]+)/);\n                  if (match && match[1]) {\n                    data.success = true;\n                    data.captchaType = 'standalone_iframe';\n                    data.sitekey = match[1];\n                    data.searchMethods.push('✅ iframe src');\n                    return data;\n                  }\n                }\n              }\n            }\n          } catch (e) {\n            data.searchMethods.push('⚠️ ' + selector + ' - error: ' + e.message);\n          }\n        }\n        data.searchMethods.push('❌ DOM selectors - not found');\n        \n        // Method 3: Regex search in HTML\n        const html = document.documentElement.innerHTML;\n        const patterns = [\n          { name: 'data-sitekey', regex: /data-sitekey=[\"']([0-9a-zA-Z_-]{10,100})[\"']/ },\n          { name: 'sitekey property', regex: /[\"']sitekey[\"']\\s*:\\s*[\"']([0-9a-zA-Z_-]{10,100})[\"']/ },\n          { name: '0x pattern', regex: /[\"'](0x[0-9a-zA-Z_-]{10,100})[\"']/ }\n        ];\n        \n        for (const pattern of patterns) {\n          const match = html.match(pattern.regex);\n          if (match && match[1] && match[1].length >= 10) {\n            data.success = true;\n            data.captchaType = 'html_extraction';\n            data.sitekey = match[1];\n            data.searchMethods.push('✅ HTML regex: ' + pattern.name);\n            return data;\n          }\n        }\n        data.searchMethods.push('❌ HTML regex - not found');\n        \n        data.error = 'Cloudflare Turnstile sitekey not found';\n        data.suggestion = 'Try increasing waitTime or verify the page uses Turnstile';\n        \n        return data;\n      });\n      \n      return { data: result };\n      \n    } catch (error) {\n      return { \n        data: { \n          success: false, \n          error: error.message, \n          url: targetURL,\n          timestamp: new Date().toISOString()\n        } \n      };\n    }\n  }`,\n  context: {\n    targetURL: $json.targetURL,\n    waitTime: $json.waitTime\n  }\n}) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "name": "🌐 Browserless Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "extract",
+      "notes": "Извлекает sitekey через Browserless.io с перехватом turnstile.render()"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "✅ success",
+              "value": "={{ $json.data.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "sitekey",
+              "name": "🔑 websiteKey",
+              "value": "={{ $json.data.sitekey }}",
+              "type": "string"
+            },
+            {
+              "id": "url",
+              "name": "🌐 websiteURL",
+              "value": "={{ $json.data.url }}",
+              "type": "string"
+            },
+            {
+              "id": "captchaType",
+              "name": "📋 captchaType",
+              "value": "={{ $json.data.captchaType }}",
+              "type": "string"
+            },
+            {
+              "id": "userAgent",
+              "name": "🖥️ userAgent",
+              "value": "={{ $json.data.userAgent }}",
+              "type": "string"
+            },
+            {
+              "id": "searchMethods",
+              "name": "🔍 searchMethods",
+              "value": "={{ JSON.stringify($json.data.searchMethods, null, 2) }}",
+              "type": "string"
+            },
+            {
+              "id": "action",
+              "name": "⚡ action",
+              "value": "={{ $json.data.action || null }}",
+              "type": "string"
+            },
+            {
+              "id": "cData",
+              "name": "📦 cData",
+              "value": "={{ $json.data.cData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "chlPageData",
+              "name": "📄 chlPageData",
+              "value": "={{ $json.data.chlPageData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "rucaptchaPayload",
+              "name": "🤖 RuCaptcha Request",
+              "value": "={{ $json.data.success ? JSON.stringify({\n  clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $json.data.url,\n    websiteKey: $json.data.sitekey,\n    action: $json.data.action,\n    data: $json.data.cData,\n    pagedata: $json.data.chlPageData\n  }\n}, null, 2) : 'N/A - Sitekey not found' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "⏰ timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "error",
+              "name": "❌ error",
+              "value": "={{ $json.data.error || null }}",
+              "type": "string"
+            },
+            {
+              "id": "suggestion",
+              "name": "💡 suggestion",
+              "value": "={{ $json.data.suggestion || null }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "📊 Final Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [900, 300],
+      "id": "result",
+      "notes": "Полный результат с sitekey и всеми параметрами для RuCaptcha"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "⚙️ Settings", "type": "main", "index": 0}]]
+    },
+    "⚙️ Settings": {
+      "main": [[{"node": "🌐 Browserless Extract", "type": "main", "index": 0}]]
+    },
+    "🌐 Browserless Extract": {
+      "main": [[{"node": "📊 Final Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["claude", "turnstile", "browserless", "advanced", "sitekey"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T19:10:00.000Z",
+  "versionId": ""
+}
