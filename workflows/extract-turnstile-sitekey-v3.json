@@ -54,7 +54,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://chrome.browserless.io/function?token={{ $json.token }}",
+        "url": "=https://production-sfo.browserless.io/function?token={{ $json.token }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ $json.requestBody }}",
