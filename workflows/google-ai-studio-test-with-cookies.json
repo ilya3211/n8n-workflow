@@ -1,0 +1,131 @@
+{
+  "name": "Google AI Studio - Test with Your Cookies",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        360
+      ],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/screenshot?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"url\": \"https://aistudio.google.com/app/prompts/new_chat\",\n  \"options\": {\n    \"fullPage\": true,\n    \"type\": \"png\"\n  },\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle2\",\n    \"timeout\": 60000\n  },\n  \"cookies\": [\n    {\n      \"name\": \"session\",\n      \"value\": \".eJy1VWlvqzgU_StPfC4p-xJppMlG0pB9a1NFQo4x2AlgypbAU__7AG7VPmneh6fRfLro-txz7XuOzU_OiVESgghFGdfNkhw9cD6lfoAcCvIMSw5MkFsvEhCkXJf7eeIAhChNnYxeUXTiuj9OXAkkswOE3o5otpQf1pq99-TYso4hFkv-OYZDc-RfSWFFwZMjbQe3MkmPU6sqLqWZydJhP8peF9L6Ggohqlzf8gMSjFS98mWQqvgeE-pd-jc8OMfyUDfMt8kI8pWv9M7Wun_fFLIw0WbL0aWgh0wNUn507sWr0dTdbaLxy2u4GE7PNoRvFOWbV74_FC5wIm6tWzUZSvww6zsvVX_P7_PLrFjuZxB6Jn4qqoI8Q3662h-us-gI1flAKvTVM_DWSgRxFu6U5ZqOV2I5X0ShEkWlFpvrm3cfBdqNkp1b4PnbyDMqa2IvhWdXn65cMHvJyvWUxLCExV4oQb6YiMXu4Fcra7Xd6Fv--nruO7NxBgs0sKMZNvfHt4EM5-Zx85wMLJJjmbqaZffAwD_aPVfY9tbG1lpPxi_SnPC5fZe2y-Hhjreg74aBvdwtfUHWzBP3UKuUIC9BKf4SLsqDoFloEw6q55yUTFBJkFReFHnR2EliVxK6gvLKSBg2TwgD4iyL0-7jI_NKhzkHxCTtQBo-fnRq6oj71bf2EEnTXwlqU9E8ytIPiqacFYIqZkhR1UVBNGRVMzWeUhDTS0DdMAfnVHKpVOQYR54pnCEMKemAOP7kylOUQBpltYm_0ebu_0Gb5ucPWlEVTc3QDUlWdVnWNU1WVIZBISABQ7VnRmld_rffZL-IWpBToIR4BLVbbe9ms_PMwSDFjGADHGOGV0KoYmm3X0BrUkJ8YxQRCBFDnU65oIhKG2TIgtEGRWJB-J6UzR_fKxTAgseCzjAqCy4LDCIj1jkmMMsT9KvCAZb_fXKP4LE38A0K7fU4Up7MJUaaj4fTQtPGar-vz3f2YUAux7D0Pa832euba6Uf3MXtr7SWDLKWPilqX_6HIzMaD4QkKH_D8-eDICBraES9Vt_UJUFtpb3Hn0lVEAxBfW-hUQEC0irt1U8tk7q-VM2wmqTQJBwYgM-bM0RFSjI0-HqeWU8npG4efGyfDVzuuAzcyW60c0PnmrO2VvNVG7oTJySCJAa1Kd-5By4lfuSQqOH5-AnU734beVbHvf8DRYwF0A.aRzU_Q.zYi4MwFG0xX-f9GWt-BiIzRT8oU\",\n      \"domain\": \"ai.google.dev\",\n      \"path\": \"/\",\n      \"secure\": true,\n      \"httpOnly\": true,\n      \"sameSite\": \"None\"\n    },\n    {\n      \"name\": \"signin\",\n      \"value\": \"autosignin\",\n      \"domain\": \"ai.google.dev\",\n      \"path\": \"/\",\n      \"secure\": true,\n      \"httpOnly\": false\n    },\n    {\n      \"name\": \"session\",\n      \"value\": \".eJy1VWlvqzgU_StPfC4p-xJppMlG0pB9a1NFQo4x2AlgypbAU__7AG7VPmneh6fRfLro-txz7XuOzU_OiVESgghFGdfNkhw9cD6lfoAcCvIMSw5MkFsvEhCkXJf7eeIAhChNnYxeUXTiuj9OXAkkswOE3o5otpQf1pq99-TYso4hFkv-OYZDc-RfSWFFwZMjbQe3MkmPU6sqLqWZydJhP8peF9L6Ggohqlzf8gMSjFS98mWQqvgeE-pd-jc8OMfyUDfMt8kI8pWv9M7Wun_fFLIw0WbL0aWgh0wNUn507sWr0dTdbaLxy2u4GE7PNoRvFOWbV74_FC5wIm6tWzUZSvww6zsvVX_P7_PLrFjuZxB6Jn4qqoI8Q3662h-us-gI1flAKvTVM_DWSgRxFu6U5ZqOV2I5X0ShEkWlFpvrm3cfBdqNkp1b4PnbyDMqa2IvhWdXn65cMHvJyvWUxLCExV4oQb6YiMXu4Fcra7Xd6Fv--nruO7NxBgs0sKMZNvfHt4EM5-Zx85wMLJJjmbqaZffAwD_aPVfY9tbG1lpPxi_SnPC5fZe2y-Hhjreg74aBvdwtfUHWzBP3UKuUIC9BKf4SLsqDoFloEw6q55yUTFBJkFReFHnR2EliVxK6gvLKSBg2TwgD4iyL0-7jI_NKhzkHxCTtQBo-fnRq6oj71bf2EEnTXwlqU9E8ytIPiqacFYIqZkhR1UVBNGRVMzWeUhDTS0DdMAfnVHKpVOQYR54pnCEMKemAOP7kylOUQBpltYm_0ebu_0Gb5ucPWlEVTc3QDUlWdVnWNU1WVIZBISABQ7VnRmld_rffZL-IWpBToIR4BLVbbe9ms_PMwSDFjGADHGOGV0KoYmm3X0BrUkJ8YxQRCBFDnU65oIhKG2TIgtEGRWJB-J6UzR_fKxTAgseCzjAqCy4LDCIj1jkmMMsT9KvCAZb_fXKP4LE38A0K7fU4Up7MJUaaj4fTQtPGar-vz3f2YUAux7D0Pa832euba6Uf3MXtr7SWDLKWPilqX_6HIzMaD4QkKH_D8-eDICBraES9Vt_UJUFtpb3Hn0lVEAxBfW-hUQEC0irt1U8tk7q-VM2wmqTQJBwYgM-bM0RFSjI0-HqeWU8npG4efGyfDVzuuAzcyW60c0PnmrO2VvNVG7oTJySCJAa1Kd-5By4lfuSQqOH5-AnU734beVbHvf8DRYwF0A.aRzU_Q.zYi4MwFG0xX-f9GWt-BiIzRT8oU\",\n      \"domain\": \".google.com\",\n      \"path\": \"/\",\n      \"secure\": true,\n      \"httpOnly\": true,\n      \"sameSite\": \"None\"\n    },\n    {\n      \"name\": \"signin\",\n      \"value\": \"autosignin\",\n      \"domain\": \".google.com\",\n      \"path\": \"/\",\n      \"secure\": true,\n      \"httpOnly\": false\n    }\n  ]\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Open AI Studio with Auth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        360
+      ],
+      "id": "open-auth-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "message",
+              "name": "message",
+              "value": "✅ Google AI Studio открыт с вашими cookies!",
+              "type": "string"
+            },
+            {
+              "id": "authenticated",
+              "name": "authentication_used",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "screenshot_available",
+              "name": "screenshot_available",
+              "value": "={{ $json.data ? true : false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "screenshot_size",
+              "name": "screenshot_size_bytes",
+              "value": "={{ $json.data ? $json.data.length : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "info",
+              "name": "info",
+              "value": "Проверьте скриншот - если видите ваш профиль/аватар, авторизация работает!",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        680,
+        360
+      ],
+      "id": "format-node"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Open AI Studio with Auth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open AI Studio with Auth": {
+      "main": [
+        [
+          {
+            "node": "Format Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
