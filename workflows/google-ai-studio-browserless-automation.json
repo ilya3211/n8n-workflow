@@ -1,0 +1,652 @@
+{
+  "name": "Google AI Studio - Browserless Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-studio-automation",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        },
+        "responseData": "allEntries"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "ai-studio-webhook",
+      "id": "webhook-node"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "prompt",
+              "value": "Расскажи о квантовых компьютерах простым языком"
+            },
+            {
+              "name": "model",
+              "value": "gemini-pro"
+            }
+          ],
+          "number": [
+            {
+              "name": "maxTokens",
+              "value": 2048
+            }
+          ],
+          "boolean": [
+            {
+              "name": "waitForResponse",
+              "value": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        500
+      ],
+      "id": "manual-trigger-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt",
+              "name": "prompt",
+              "value": "={{ $json.prompt || $json.body?.prompt || \"Привет! Расскажи о себе.\" }}",
+              "type": "string"
+            },
+            {
+              "id": "model",
+              "name": "model",
+              "value": "={{ $json.model || $json.body?.model || \"gemini-pro\" }}",
+              "type": "string"
+            },
+            {
+              "id": "maxTokens",
+              "name": "maxTokens",
+              "value": "={{ $json.maxTokens || $json.body?.maxTokens || 2048 }}",
+              "type": "number"
+            },
+            {
+              "id": "browserlessUrl",
+              "name": "browserlessUrl",
+              "value": "={{ $json.browserlessUrl || $json.body?.browserlessUrl || \"ws://localhost:3000\" }}",
+              "type": "string"
+            },
+            {
+              "id": "aiStudioUrl",
+              "name": "aiStudioUrl",
+              "value": "https://aistudio.google.com/app/prompts/new_chat",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Extract Parameters",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        300
+      ],
+      "id": "extract-params-node"
+    },
+    {
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "goto",
+        "arguments": {
+          "argument": [
+            {
+              "key": "url",
+              "value": "={{ $('Extract Parameters').item.json.aiStudioUrl }}"
+            },
+            {
+              "key": "waitUntil",
+              "value": "networkidle2"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "name": "Open AI Studio",
+      "type": "n8n-nodes-base.puppeteer",
+      "typeVersion": 1,
+      "position": [
+        680,
+        300
+      ],
+      "id": "open-ai-studio-node",
+      "credentials": {
+        "browserlessApi": {
+          "id": "1",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "waitForSelector",
+        "arguments": {
+          "argument": [
+            {
+              "key": "selector",
+              "value": "textarea[placeholder*='Enter a prompt'], div[contenteditable='true'], textarea[aria-label*='prompt']"
+            },
+            {
+              "key": "timeout",
+              "value": "30000"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Wait for Input Field",
+      "type": "n8n-nodes-base.puppeteer",
+      "typeVersion": 1,
+      "position": [
+        900,
+        300
+      ],
+      "id": "wait-input-node",
+      "credentials": {
+        "browserlessApi": {
+          "id": "1",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "type",
+        "arguments": {
+          "argument": [
+            {
+              "key": "selector",
+              "value": "textarea[placeholder*='Enter a prompt'], div[contenteditable='true'], textarea[aria-label*='prompt']"
+            },
+            {
+              "key": "text",
+              "value": "={{ $('Extract Parameters').item.json.prompt }}"
+            },
+            {
+              "key": "delay",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Type Prompt",
+      "type": "n8n-nodes-base.puppeteer",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        300
+      ],
+      "id": "type-prompt-node",
+      "credentials": {
+        "browserlessApi": {
+          "id": "1",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "click",
+        "arguments": {
+          "argument": [
+            {
+              "key": "selector",
+              "value": "button[aria-label*='Send'], button[aria-label*='Run'], button:has-text('Run')"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Click Send Button",
+      "type": "n8n-nodes-base.puppeteer",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        300
+      ],
+      "id": "click-send-node",
+      "credentials": {
+        "browserlessApi": {
+          "id": "1",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "waitForSelector",
+        "arguments": {
+          "argument": [
+            {
+              "key": "selector",
+              "value": "div[class*='response'], div[class*='message'], div[class*='output'], pre"
+            },
+            {
+              "key": "timeout",
+              "value": "90000"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Wait for Response",
+      "type": "n8n-nodes-base.puppeteer",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        300
+      ],
+      "id": "wait-response-node",
+      "credentials": {
+        "browserlessApi": {
+          "id": "1",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "evaluate",
+        "code": "() => {\n  // Ищем элемент с ответом от AI\n  const responseSelectors = [\n    'div[class*=\"response\"]',\n    'div[class*=\"message\"][class*=\"assistant\"]',\n    'div[class*=\"output\"]',\n    'div[data-message-author-role=\"assistant\"]',\n    'pre',\n    '.response-text'\n  ];\n  \n  let responseElement = null;\n  for (const selector of responseSelectors) {\n    const elements = document.querySelectorAll(selector);\n    if (elements.length > 0) {\n      responseElement = elements[elements.length - 1]; // Берем последний элемент\n      break;\n    }\n  }\n  \n  if (responseElement) {\n    return {\n      success: true,\n      response: responseElement.innerText || responseElement.textContent,\n      html: responseElement.innerHTML\n    };\n  }\n  \n  return {\n    success: false,\n    response: 'Response element not found',\n    bodyText: document.body.innerText.substring(0, 1000)\n  };\n}",
+        "options": {}
+      },
+      "name": "Extract Response",
+      "type": "n8n-nodes-base.puppeteer",
+      "typeVersion": 1,
+      "position": [
+        1780,
+        300
+      ],
+      "id": "extract-response-node",
+      "credentials": {
+        "browserlessApi": {
+          "id": "1",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeCommand",
+        "command": "screenshot",
+        "arguments": {
+          "argument": [
+            {
+              "key": "path",
+              "value": "/tmp/ai-studio-screenshot.png"
+            },
+            {
+              "key": "fullPage",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Take Screenshot",
+      "type": "n8n-nodes-base.puppeteer",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        300
+      ],
+      "id": "screenshot-node",
+      "credentials": {
+        "browserlessApi": {
+          "id": "1",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "closePage",
+        "options": {}
+      },
+      "name": "Close Browser",
+      "type": "n8n-nodes-base.puppeteer",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        300
+      ],
+      "id": "close-browser-node",
+      "credentials": {
+        "browserlessApi": {
+          "id": "1",
+          "name": "Browserless API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": "={{ $json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "response",
+              "name": "response",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "original_prompt",
+              "value": "={{ $('Extract Parameters').item.json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "model",
+              "name": "model",
+              "value": "={{ $('Extract Parameters').item.json.model }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "method",
+              "name": "automation_method",
+              "value": "browserless",
+              "type": "string"
+            },
+            {
+              "id": "screenshot",
+              "name": "screenshot_path",
+              "value": "/tmp/ai-studio-screenshot.png",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Success Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2440,
+        200
+      ],
+      "id": "format-success-node"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "success",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "error",
+              "name": "error",
+              "value": "={{ $json.error?.message || 'Unknown error occurred' }}",
+              "type": "string"
+            },
+            {
+              "id": "error_details",
+              "name": "error_details",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "prompt",
+              "name": "original_prompt",
+              "value": "={{ $('Extract Parameters').item.json.prompt }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Format Error Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2440,
+        400
+      ],
+      "id": "format-error-node"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              }
+            ]
+          }
+        }
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2660,
+        300
+      ],
+      "id": "respond-webhook-node"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract Parameters",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Parameters": {
+      "main": [
+        [
+          {
+            "node": "Open AI Studio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open AI Studio": {
+      "main": [
+        [
+          {
+            "node": "Wait for Input Field",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Input Field": {
+      "main": [
+        [
+          {
+            "node": "Type Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Type Prompt": {
+      "main": [
+        [
+          {
+            "node": "Click Send Button",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Click Send Button": {
+      "main": [
+        [
+          {
+            "node": "Wait for Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Response": {
+      "main": [
+        [
+          {
+            "node": "Extract Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Response": {
+      "main": [
+        [
+          {
+            "node": "Take Screenshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Take Screenshot": {
+      "main": [
+        [
+          {
+            "node": "Close Browser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close Browser": {
+      "main": [
+        [
+          {
+            "node": "Format Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Success Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Error Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-11-18T00:00:00.000Z",
+      "updatedAt": "2025-11-18T00:00:00.000Z",
+      "id": "ai-studio-automation",
+      "name": "AI Studio Browserless"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-11-18T00:00:00.000Z",
+  "versionId": "1"
+}
