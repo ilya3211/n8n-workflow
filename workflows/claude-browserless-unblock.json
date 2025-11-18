@@ -12,7 +12,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const token = '2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac';\nconst sessionKey = 'YOUR_SESSION_KEY_HERE';\nconst cfBmCookie = 'YOUR_CF_BM_COOKIE_HERE';\nconst userPrompt = $input.first().json.prompt || 'Привет! Как дела?';\n\nconst requestBody = {\n  url: 'https://claude.ai/new',\n  content: true,\n  cookies: true,\n  screenshot: false,\n  browserWSEndpoint: false,\n  setCookies: [\n    {\n      name: 'sessionKey',\n      value: sessionKey,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    },\n    {\n      name: '__cf_bm',\n      value: cfBmCookie,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    }\n  ],\n  waitFor: 5000\n};\n\nreturn [{json: {\n  url: `https://production-sfo.browserless.io/unblock?token=${token}&timeout=300000&stealth=true`,\n  body: JSON.stringify(requestBody)\n}}];"
+        "jsCode": "const token = '2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac';\nconst sessionKey = 'YOUR_SESSION_KEY_HERE';\nconst cfBmCookie = 'YOUR_CF_BM_COOKIE_HERE';\nconst userPrompt = $input.first().json.prompt || 'Привет! Как дела?';\n\nconst requestBody = {\n  url: 'https://claude.ai/new',\n  content: true,\n  cookies: true,\n  screenshot: false,\n  browserWSEndpoint: false,\n  setCookies: [\n    {\n      name: 'sessionKey',\n      value: sessionKey,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    },\n    {\n      name: '__cf_bm',\n      value: cfBmCookie,\n      domain: '.claude.ai',\n      path: '/',\n      httpOnly: true,\n      secure: true\n    }\n  ],\n  waitFor: 5000\n};\n\nreturn [{json: {\n  url: `https://production-sfo.browserless.io/unblock?token=${token}&timeout=60000&stealth=true`,\n  body: JSON.stringify(requestBody)\n}}];"
       },
       "id": "b1",
       "name": "Prepare Unblock Request",
@@ -28,7 +28,7 @@
         "contentType": "application/json",
         "body": "={{ $json.body }}",
         "options": {
-          "timeout": 300000
+          "timeout": 90000
         }
       },
       "id": "c1",
