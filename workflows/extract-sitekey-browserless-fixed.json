@@ -1,0 +1,199 @@
+{
+  "name": "Extract Sitekey Browserless (Fixed)",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "id": "trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "targetURL",
+              "name": "targetURL",
+              "value": "https://claude.ai/new",
+              "type": "string"
+            },
+            {
+              "id": "browserlessToken",
+              "name": "browserlessToken",
+              "value": "YOUR_BROWSERLESS_TOKEN_HERE",
+              "type": "string"
+            },
+            {
+              "id": "waitTime",
+              "name": "waitTime",
+              "value": 5000,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "⚙️ Settings - EDIT TOKEN HERE",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [460, 300],
+      "id": "settings",
+      "notes": "ВАЖНО: Замените YOUR_BROWSERLESS_TOKEN_HERE на ваш токен!\n\nПолучить токен:\n1. Зарегистрируйтесь на https://www.browserless.io/sign-up\n2. Скопируйте API Token\n3. Вставьте сюда"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://production-sfo.browserless.io/chromium/function?token={{ $json.browserlessToken }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  code: `\n    module.exports = async ({ page }) => {\n      try {\n        // Перехват turnstile.render\n        await page.evaluateOnNewDocument(() => {\n          window.captchaData = {};\n          window.captchaIntercepted = false;\n          \n          const checkInterval = setInterval(() => {\n            if (window.turnstile && !window.captchaIntercepted) {\n              clearInterval(checkInterval);\n              window.captchaIntercepted = true;\n              \n              const originalRender = window.turnstile.render;\n              window.turnstile.render = function(container, params) {\n                window.captchaData = {\n                  type: 'challenge_page',\n                  sitekey: params.sitekey,\n                  action: params.action,\n                  cData: params.cData,\n                  chlPageData: params.chlPageData,\n                  intercepted: true\n                };\n                return originalRender.call(this, container, params);\n              };\n            }\n          }, 50);\n        });\n        \n        // Переход на страницу\n        await page.goto('${$json.targetURL}', { \n          waitUntil: 'networkidle2',\n          timeout: 30000 \n        });\n        \n        // Ожидание\n        await page.waitForTimeout(${$json.waitTime});\n        \n        // Извлечение данных\n        const result = await page.evaluate(() => {\n          const data = {\n            success: false,\n            url: window.location.href,\n            userAgent: navigator.userAgent,\n            timestamp: new Date().toISOString(),\n            captchaType: 'not_found',\n            sitekey: null,\n            turnstileData: null,\n            searchMethods: []\n          };\n          \n          // Метод 1: Перехваченные данные\n          if (window.captchaData && window.captchaData.intercepted && window.captchaData.sitekey) {\n            data.success = true;\n            data.captchaType = 'challenge_page';\n            data.sitekey = window.captchaData.sitekey;\n            data.turnstileData = window.captchaData;\n            data.searchMethods.push('✅ turnstile.render() intercept');\n            return data;\n          }\n          data.searchMethods.push('❌ turnstile.render() not found');\n          \n          // Метод 2: DOM селекторы\n          const selectors = [\n            '[data-sitekey]',\n            '[sitekey]',\n            'div[class*=\"turnstile\"]',\n            'div[class*=\"cf-turnstile\"]',\n            'iframe[src*=\"challenges.cloudflare.com\"]'\n          ];\n          \n          for (const selector of selectors) {\n            const el = document.querySelector(selector);\n            if (el) {\n              const sk = el.getAttribute('data-sitekey') || el.getAttribute('sitekey');\n              if (sk && sk.length > 10) {\n                data.success = true;\n                data.captchaType = 'standalone';\n                data.sitekey = sk;\n                data.searchMethods.push('✅ selector: ' + selector);\n                return data;\n              }\n              if (el.tagName === 'IFRAME') {\n                const src = el.getAttribute('src');\n                const m = src ? src.match(/sitekey=([^&]+)/) : null;\n                if (m) {\n                  data.success = true;\n                  data.captchaType = 'standalone_iframe';\n                  data.sitekey = m[1];\n                  data.searchMethods.push('✅ iframe src');\n                  return data;\n                }\n              }\n            }\n          }\n          data.searchMethods.push('❌ selectors not found');\n          \n          // Метод 3: HTML regex\n          const html = document.documentElement.innerHTML;\n          const patterns = [\n            /data-sitekey=[\"']([0-9a-zA-Z_-]{10,100})[\"']/,\n            /[\"']sitekey[\"'][\\\\s]*:[\\\\s]*[\"']([0-9a-zA-Z_-]{10,100})[\"']/\n          ];\n          \n          for (const p of patterns) {\n            const m = html.match(p);\n            if (m && m[1]) {\n              data.success = true;\n              data.captchaType = 'html_extraction';\n              data.sitekey = m[1];\n              data.searchMethods.push('✅ html regex');\n              return data;\n            }\n          }\n          data.searchMethods.push('❌ html regex not found');\n          \n          data.error = 'Sitekey not found';\n          return data;\n        });\n        \n        return { data: result };\n      } catch (error) {\n        return { \n          data: {\n            success: false,\n            error: error.message,\n            stack: error.stack\n          }\n        };\n      }\n    };\n  `\n}) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "name": "🌐 Browserless Extract",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "id": "extract"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "raw_response",
+              "name": "raw",
+              "value": "={{ $json }}",
+              "type": "object"
+            },
+            {
+              "id": "extracted_data",
+              "name": "extracted",
+              "value": "={{ $json.data || $json }}",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [900, 300],
+      "id": "parse"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success",
+              "name": "✅ success",
+              "value": "={{ $json.extracted.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "sitekey",
+              "name": "🔑 websiteKey",
+              "value": "={{ $json.extracted.sitekey }}",
+              "type": "string"
+            },
+            {
+              "id": "url",
+              "name": "🌐 websiteURL",
+              "value": "={{ $json.extracted.url }}",
+              "type": "string"
+            },
+            {
+              "id": "type",
+              "name": "📋 captchaType",
+              "value": "={{ $json.extracted.captchaType }}",
+              "type": "string"
+            },
+            {
+              "id": "methods",
+              "name": "🔍 searchMethods",
+              "value": "={{ JSON.stringify($json.extracted.searchMethods) }}",
+              "type": "string"
+            },
+            {
+              "id": "action",
+              "name": "⚡ action",
+              "value": "={{ $json.extracted.turnstileData?.action || null }}",
+              "type": "string"
+            },
+            {
+              "id": "data",
+              "name": "📦 data",
+              "value": "={{ $json.extracted.turnstileData?.cData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "pagedata",
+              "name": "📄 pagedata",
+              "value": "={{ $json.extracted.turnstileData?.chlPageData || null }}",
+              "type": "string"
+            },
+            {
+              "id": "rucaptcha",
+              "name": "🤖 RuCaptcha Payload",
+              "value": "={{ $json.extracted.success ? JSON.stringify({\n  clientKey: 'YOUR_RUCAPTCHA_API_KEY',\n  task: {\n    type: 'TurnstileTaskProxyless',\n    websiteURL: $json.extracted.url,\n    websiteKey: $json.extracted.sitekey,\n    action: $json.extracted.turnstileData?.action,\n    data: $json.extracted.turnstileData?.cData,\n    pagedata: $json.extracted.turnstileData?.chlPageData\n  }\n}, null, 2) : 'N/A' }}",
+              "type": "string"
+            },
+            {
+              "id": "error",
+              "name": "❌ error",
+              "value": "={{ $json.extracted.error || null }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "⏰ timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "📊 Final Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [1120, 300],
+      "id": "result"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "⚙️ Settings - EDIT TOKEN HERE", "type": "main", "index": 0}]]
+    },
+    "⚙️ Settings - EDIT TOKEN HERE": {
+      "main": [[{"node": "🌐 Browserless Extract", "type": "main", "index": 0}]]
+    },
+    "🌐 Browserless Extract": {
+      "main": [[{"node": "Parse Response", "type": "main", "index": 0}]]
+    },
+    "Parse Response": {
+      "main": [[{"node": "📊 Final Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["browserless", "turnstile", "sitekey"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-18T18:00:00.000Z",
+  "versionId": ""
+}
