@@ -1,0 +1,45 @@
+{
+  "name": "AI Studio Screenshot",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/screenshot?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"url\": \"https://aistudio.google.com/app/prompts/new_chat\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle2\"\n  },\n  \"cookies\": [\n    {\"name\": \"SID\", \"value\": \"g.a0003Qi4XUBldqx9gzjlDWuALcIleHUdVzjDWfqNHWUfPLh9aLXcmzMV0gk44iOkxD4kPjxCoAACgYKAbUSAQ8SFQHGX2MiTOXEFm1zbm4rnetG7CRfERoVAUF8yKqY8hmLQGd9ceQNUOewNAaE0076\", \"domain\": \".google.com\"},\n    {\"name\": \"__Secure-1PSID\", \"value\": \"g.a0003Qi4XUBldqx9gzjlDWuALcIleHUdVzjDWfqNHWUfPLh9aLXcTbANEosUleKmhQb1MP9lsAACgYKAUESAQ8SFQHGX2Mi1GIeiqZU8b9-DfM-ClDCLBoVAUF8yKqLcraa9iYDwUF_bMXKiwzK0076\", \"domain\": \".google.com\"},\n    {\"name\": \"__Secure-3PSID\", \"value\": \"g.a0003Qi4XUBldqx9gzjlDWuALcIleHUdVzjDWfqNHWUfPLh9aLXc34qhf5vNBTMrpR0JfzjiWwACgYKAbMSAQ8SFQHGX2MicI6pZzYY9bIxEbQ49usFpRoVAUF8yKpoQJ60F2GkX7sgbK25hcL-0076\", \"domain\": \".google.com\"}\n  ],\n  \"options\": {\n    \"type\": \"png\",\n    \"fullPage\": true\n  }\n}",
+        "options": {}
+      },
+      "name": "Browserless Screenshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        360
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Browserless Screenshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
