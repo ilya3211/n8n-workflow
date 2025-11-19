@@ -1,0 +1,47 @@
+{
+  "name": "AI Studio - Browserless CORRECT",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/function?token=2TRkln4qk0YySXg802f0c9d35a14b6e4fdedbdc9bff4edaac",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"code\": \"export default async function({ page, context }) { await page.goto('https://accounts.google.com/ServiceLogin?continue=https://aistudio.google.com/app/prompts/new_chat', {waitUntil: 'networkidle2'}); await page.waitForSelector('input[type=\\\"email\\\"]'); await page.type('input[type=\\\"email\\\"]', context.email); const screenshot = await page.screenshot({fullPage: true, encoding: 'base64'}); return {data: {screenshot: screenshot, status: 'email_entered'}, type: 'application/json'}; }\",\n  \"context\": {\n    \"email\": \"countescom@gmail.com\"\n  }\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "name": "Enter Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        360
+      ]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Enter Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
