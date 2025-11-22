@@ -39,12 +39,6 @@
               "name": "model",
               "type": "string",
               "value": "sora_image"
-            },
-            {
-              "id": "process-settings",
-              "name": "process_images",
-              "type": "boolean",
-              "value": true
             }
           ]
         },
@@ -105,7 +99,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\n\ntry {\n  // Extract content from response\n  const content = item.json.choices[0].message.content;\n  \n  // Extract image URLs using regex\n  const imageUrlRegex = /!\\[.*?\\]\\((https?:\\/\\/[^)]+)\\)/g;\n  const matches = [...content.matchAll(imageUrlRegex)];\n  const imageUrls = matches.map(match => match[1]);\n  \n  // Get the original prompt info\n  const originalPrompt = item.json.full_prompt || '';\n  const processImages = item.json.process_images || false;\n  \n  // If no URLs found, return error info\n  if (imageUrls.length === 0) {\n    return [{\n      json: {\n        success: false,\n        error: \"No image URLs found in response\",\n        raw_response: content,\n        generation_success: false\n      }\n    }];\n  }\n  \n  // Create output with extracted URLs\n  const outputs = imageUrls.map((url, index) => ({\n    json: {\n      success: true,\n      image_url: url,\n      image_number: index + 1,\n      total_images: imageUrls.length,\n      prompt: originalPrompt,\n      aspect_ratio: item.json.aspect_ratio,\n      model: item.json.model,\n      process_images: processImages,\n      cost: \"$0.01\",\n      raw_response: content,\n      generation_success: true,\n      timestamp: new Date().toISOString()\n    }\n  }));\n  \n  return outputs;\n  \n} catch (error) {\n  return [{\n    json: {\n      success: false,\n      error: error.message || \"Failed to process response\",\n      generation_success: false\n    }\n  }];\n}"
+        "jsCode": "const item = $input.first();\n\ntry {\n  // Extract content from response\n  const content = item.json.choices[0].message.content;\n  \n  // Extract image URLs using regex\n  const imageUrlRegex = /!\\[.*?\\]\\((https?:\\/\\/[^)]+)\\)/g;\n  const matches = [...content.matchAll(imageUrlRegex)];\n  const imageUrls = matches.map(match => match[1]);\n  \n  // Get the original prompt info\n  const originalPrompt = item.json.full_prompt || '';\n  \n  // If no URLs found, return error info\n  if (imageUrls.length === 0) {\n    return [{\n      json: {\n        success: false,\n        error: \"No image URLs found in response\",\n        raw_response: content,\n        generation_success: false\n      }\n    }];\n  }\n  \n  // Create output with extracted URLs\n  const outputs = imageUrls.map((url, index) => ({\n    json: {\n      success: true,\n      image_url: url,\n      image_number: index + 1,\n      total_images: imageUrls.length,\n      prompt: originalPrompt,\n      aspect_ratio: item.json.aspect_ratio,\n      model: item.json.model,\n      cost: \"$0.01\",\n      raw_response: content,\n      generation_success: true,\n      timestamp: new Date().toISOString()\n    }\n  }));\n  \n  return outputs;\n  \n} catch (error) {\n  return [{\n    json: {\n      success: false,\n      error: error.message || \"Failed to process response\",\n      generation_success: false\n    }\n  }];\n}"
       },
       "id": "9886f614-32d4-48e1-9dcb-0c625e5cbbab",
       "name": "Extract Image URLs",
@@ -139,47 +133,14 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose"
-          },
-          "conditions": [
-            {
-              "id": "check-process",
-              "leftValue": "={{ $json.process_images }}",
-              "rightValue": "={{ true }}",
-              "operator": {
-                "type": "boolean",
-                "operation": "equals",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "60ea2899-b098-4850-a26e-6e0de2a33180",
-      "name": "Process Images?",
-      "type": "n8n-nodes-base.if",
-      "position": [
-        -224,
-        112
-      ],
-      "typeVersion": 2
-    },
-    {
-      "parameters": {
         "jsCode": "// Этап 1: Resize до 40% с sharp\nconst sharp = require('sharp');\nconst items = $input.all();\n\nreturn Promise.all(items.map(async (item) => {\n  if (!item.binary || !item.binary.data) {\n    return { \n      json: { ...item.json, error: 'No binary data for resize' }, \n      binary: item.binary \n    };\n  }\n\n  const inputBuffer = Buffer.from(item.binary.data.data, 'base64');\n  const metadata = await sharp(inputBuffer).metadata();\n\n  const resizedBuffer = await sharp(inputBuffer)\n    .rotate()\n    .resize({\n      width: Math.round(metadata.width * 0.4),\n      height: Math.round(metadata.height * 0.4),\n      fit: 'contain',\n      withoutEnlargement: true\n    })\n    .toBuffer();\n\n  const newName = item.binary.data.fileName.replace(/\\.[^\\.]+$/, '_resized.png');\n\n  return {\n    json: { \n      ...item.json, \n      resize_note: 'Resized to 40%',\n      original_width: metadata.width,\n      original_height: metadata.height,\n      new_width: Math.round(metadata.width * 0.4),\n      new_height: Math.round(metadata.height * 0.4)\n    },\n    binary: {\n      data: {\n        data: resizedBuffer.toString('base64'),\n        mimeType: 'image/png',\n        fileName: newName,\n        fileExtension: 'png',\n        fileSize: resizedBuffer.length\n      }\n    }\n  };\n}));"
       },
       "id": "dafc0a0c-dc4a-4702-bb28-52d64ef06c77",
       "name": "1. Уменьшить до 40% (Sharp)",
       "type": "n8n-nodes-base.code",
       "position": [
-        0,
-        0
+        -224,
+        112
       ],
       "typeVersion": 2
     },
@@ -191,8 +152,8 @@
       "name": "2. Сжать (webp 65%) (Sharp)",
       "type": "n8n-nodes-base.code",
       "position": [
-        224,
-        0
+        0,
+        112
       ],
       "typeVersion": 2
     },
@@ -204,27 +165,14 @@
       "name": "Format Processed",
       "type": "n8n-nodes-base.code",
       "position": [
-        448,
-        0
+        224,
+        112
       ],
       "typeVersion": 2
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"original\",\n      message: \"Image not processed (processing disabled)\"\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
-      },
-      "id": "2f5411f0-a730-40a5-a12f-2d5dde4c5ae1",
-      "name": "Format Original",
-      "type": "n8n-nodes-base.code",
-      "position": [
-        0,
-        208
-      ],
-      "typeVersion": 2
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\n\n// Create final output\nreturn items.map((item, index) => {\n  const result = {\n    json: {\n      status: \"Complete\",\n      image_number: item.json.image_number || index + 1,\n      prompt: item.json.prompt,\n      aspect_ratio: item.json.aspect_ratio,\n      model: item.json.model,\n      image_url: item.json.image_url,\n      processing: item.json.processing || {},\n      cost: item.json.cost,\n      timestamp: item.json.timestamp\n    },\n    binary: {}\n  };\n  \n  // Add binary data with appropriate naming\n  if (item.binary) {\n    if (item.json.processing?.status === \"processed\") {\n      result.binary.processed_image = item.binary.data || item.binary.image || {};\n    } else {\n      result.binary.original_image = item.binary.data || item.binary.image || {};\n    }\n  }\n  \n  return result;\n});"
+        "jsCode": "const items = $input.all();\n\n// Create final output\nreturn items.map((item, index) => {\n  const result = {\n    json: {\n      status: \"Complete\",\n      image_number: item.json.image_number || index + 1,\n      prompt: item.json.prompt,\n      aspect_ratio: item.json.aspect_ratio,\n      model: item.json.model,\n      image_url: item.json.image_url,\n      processing: item.json.processing || {},\n      cost: item.json.cost,\n      timestamp: item.json.timestamp\n    },\n    binary: {}\n  };\n  \n  // Add binary data (always processed)\n  if (item.binary && item.binary.data) {\n    result.binary.processed_image = item.binary.data;\n  }\n  \n  return result;\n});"
       },
       "id": "b4b1fe3d-1b8a-4803-afc5-09290a19a1bf",
       "name": "Final Output",
@@ -296,25 +244,7 @@
       "main": [
         [
           {
-            "node": "Process Images?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Process Images?": {
-      "main": [
-        [
-          {
             "node": "1. Уменьшить до 40% (Sharp)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Format Original",
             "type": "main",
             "index": 0
           }
@@ -344,17 +274,6 @@
       ]
     },
     "Format Processed": {
-      "main": [
-        [
-          {
-            "node": "Final Output",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format Original": {
       "main": [
         [
           {
