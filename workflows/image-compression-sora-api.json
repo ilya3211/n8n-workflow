@@ -133,48 +133,26 @@
     },
     {
       "parameters": {
-        "operation": "resize",
-        "resizeOption": "percentage",
-        "resizePercentage": 40,
-        "options": {}
+        "jsCode": "const items = $input.all();\nconst Canvas = require('canvas');\nconst { Image } = Canvas;\n\nreturn Promise.all(items.map(async (item) => {\n  if (!item.binary || !item.binary.data) {\n    return { \n      json: { ...item.json, error: 'No binary data' }, \n      binary: item.binary \n    };\n  }\n\n  try {\n    // Get image buffer\n    const inputBuffer = Buffer.from(item.binary.data.data, 'base64');\n    \n    // Load image to get dimensions\n    const img = new Image();\n    img.src = inputBuffer;\n    \n    const originalWidth = img.width;\n    const originalHeight = img.height;\n    \n    // Calculate 40% size\n    const newWidth = Math.round(originalWidth * 0.4);\n    const newHeight = Math.round(originalHeight * 0.4);\n    \n    // Create canvas with new size\n    const canvas = Canvas.createCanvas(newWidth, newHeight);\n    const ctx = canvas.getContext('2d');\n    \n    // Draw resized image\n    ctx.drawImage(img, 0, 0, newWidth, newHeight);\n    \n    // Convert to WebP\n    const outputBuffer = canvas.toBuffer('image/webp', { quality: 0.65 });\n    \n    return {\n      json: {\n        ...item.json,\n        original_width: originalWidth,\n        original_height: originalHeight,\n        new_width: newWidth,\n        new_height: newHeight,\n        original_size: item.binary.data.fileSize,\n        new_size: outputBuffer.length\n      },\n      binary: {\n        data: {\n          data: outputBuffer.toString('base64'),\n          mimeType: 'image/webp',\n          fileName: (item.binary.data.fileName || 'image').replace(/\\.[^.]+$/, '.webp'),\n          fileExtension: 'webp',\n          fileSize: outputBuffer.length\n        }\n      }\n    };\n  } catch (error) {\n    return {\n      json: {\n        ...item.json,\n        error: error.message\n      },\n      binary: item.binary\n    };\n  }\n}));"
       },
       "id": "dafc0a0c-dc4a-4702-bb28-52d64ef06c77",
-      "name": "1. Resize to 40%",
-      "type": "n8n-nodes-base.editImage",
+      "name": "Resize 40% + WebP",
+      "type": "n8n-nodes-base.code",
       "position": [
         -224,
         112
       ],
-      "typeVersion": 1
+      "typeVersion": 2
     },
     {
       "parameters": {
-        "operation": "resize",
-        "resizeOption": "percentage",
-        "resizePercentage": 100,
-        "options": {
-          "format": "webp",
-          "quality": 65
-        }
-      },
-      "id": "76efbdda-6b4d-4c05-855a-ea7096cde708",
-      "name": "2. Convert to WebP",
-      "type": "n8n-nodes-base.editImage",
-      "position": [
-        0,
-        112
-      ],
-      "typeVersion": 1
-    },
-    {
-      "parameters": {
-        "jsCode": "const item = $input.first();\n\n// Get file info\nconst processedFile = item.binary?.data || {};\nconst processedSize = processedFile.fileSize || 0;\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      file_size: `${(processedSize / 1024).toFixed(1)} KB`,\n      format: \"webp\",\n      quality: 65,\n      resize: \"40%\"\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
+        "jsCode": "const item = $input.first();\n\n// Get file info\nconst originalSize = item.json.original_size || 0;\nconst newSize = item.json.new_size || 0;\nconst compressionRatio = originalSize > 0 ? ((1 - newSize / originalSize) * 100).toFixed(1) : 0;\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      original_size: `${(originalSize / 1024).toFixed(1)} KB`,\n      processed_size: `${(newSize / 1024).toFixed(1)} KB`,\n      compression_ratio: `${compressionRatio}%`,\n      format: \"webp\",\n      quality: 65,\n      resize: \"40%\",\n      dimensions: {\n        original: `${item.json.original_width}x${item.json.original_height}`,\n        resized: `${item.json.new_width}x${item.json.new_height}`\n      }\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
       },
       "id": "6fed1060-b185-4f7e-b617-11e37fe7d4e3",
-      "name": "Format Processed",
+      "name": "Format Result",
       "type": "n8n-nodes-base.code",
       "position": [
-        224,
+        0,
         112
       ],
       "typeVersion": 2
@@ -253,36 +231,25 @@
       "main": [
         [
           {
-            "node": "1. Resize to 40%",
+            "node": "Resize 40% + WebP",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "1. Resize to 40%": {
+    "Resize 40% + WebP": {
       "main": [
         [
           {
-            "node": "2. Convert to WebP",
+            "node": "Format Result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "2. Convert to WebP": {
-      "main": [
-        [
-          {
-            "node": "Format Processed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format Processed": {
+    "Format Result": {
       "main": [
         [
           {
