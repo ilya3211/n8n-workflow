@@ -1,0 +1,100 @@
+{
+  "name": "Image Resize & Compress (Working)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-001",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [240, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "https://mycnd-hz.oss-cn-hangzhou.aliyuncs.com/sora/00d81259-aef8-48ca-8a58-caf367bc5af8.png",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "download-001",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "operation": "information"
+      },
+      "id": "info-001",
+      "name": "Get Info",
+      "type": "n8n-nodes-base.editImage",
+      "position": [680, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\n// Get image dimensions from metadata\nconst width = item.json.width || 1536;\nconst height = item.json.height || 1024;\n\n// Calculate 40% dimensions\nconst newWidth = Math.round(width * 0.4);\nconst newHeight = Math.round(height * 0.4);\n\nreturn {\n  json: {\n    ...item.json,\n    original_width: width,\n    original_height: height,\n    target_width: newWidth,\n    target_height: newHeight\n  },\n  binary: item.binary\n};"
+      },
+      "id": "calc-001",
+      "name": "Calculate Sizes",
+      "type": "n8n-nodes-base.code",
+      "position": [900, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "width": "={{ $json.target_width }}",
+        "height": "={{ $json.target_height }}",
+        "resizeOption": "ignoreAspectRatio",
+        "options": {}
+      },
+      "id": "resize-001",
+      "name": "Resize to 40%",
+      "type": "n8n-nodes-base.editImage",
+      "position": [1120, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "information"
+      },
+      "id": "info-final",
+      "name": "Final Info",
+      "type": "n8n-nodes-base.editImage",
+      "position": [1340, 300],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{"node": "Download Image", "type": "main", "index": 0}]]
+    },
+    "Download Image": {
+      "main": [[{"node": "Get Info", "type": "main", "index": 0}]]
+    },
+    "Get Info": {
+      "main": [[{"node": "Calculate Sizes", "type": "main", "index": 0}]]
+    },
+    "Calculate Sizes": {
+      "main": [[{"node": "Resize to 40%", "type": "main", "index": 0}]]
+    },
+    "Resize to 40%": {
+      "main": [[{"node": "Final Info", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-22T00:00:00.000Z",
+  "versionId": "1"
+}
