@@ -1,0 +1,216 @@
+{
+  "name": "Test Image Processing (Resize 40% + WebP)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "test-trigger-001",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -400,
+        200
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "test-data-001",
+              "name": "success",
+              "type": "boolean",
+              "value": true
+            },
+            {
+              "id": "test-data-002",
+              "name": "image_url",
+              "type": "string",
+              "value": "https://mycnd-hz.oss-cn-hangzhou.aliyuncs.com/sora/00d81259-aef8-48ca-8a58-caf367bc5af8.png"
+            },
+            {
+              "id": "test-data-003",
+              "name": "image_number",
+              "type": "number",
+              "value": 1
+            },
+            {
+              "id": "test-data-004",
+              "name": "total_images",
+              "type": "number",
+              "value": 1
+            },
+            {
+              "id": "test-data-005",
+              "name": "prompt",
+              "type": "string",
+              "value": "Test image processing"
+            },
+            {
+              "id": "test-data-006",
+              "name": "model",
+              "type": "string",
+              "value": "sora_image"
+            },
+            {
+              "id": "test-data-007",
+              "name": "cost",
+              "type": "string",
+              "value": "$0.01"
+            },
+            {
+              "id": "test-data-008",
+              "name": "generation_success",
+              "type": "boolean",
+              "value": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "test-set-001",
+      "name": "Test Data",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -200,
+        200
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.image_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "test-download-001",
+      "name": "Download Test Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        0,
+        200
+      ],
+      "typeVersion": 4.2,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "resizeOption": "percentage",
+        "resizePercentage": 40,
+        "options": {}
+      },
+      "id": "test-resize-001",
+      "name": "1. Resize to 40%",
+      "type": "n8n-nodes-base.editImage",
+      "position": [
+        200,
+        200
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "resizeOption": "percentage",
+        "resizePercentage": 100,
+        "options": {
+          "format": "webp",
+          "quality": 65
+        }
+      },
+      "id": "test-webp-001",
+      "name": "2. Convert to WebP",
+      "type": "n8n-nodes-base.editImage",
+      "position": [
+        400,
+        200
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\n// Get file info\nconst processedFile = item.binary?.data || {};\nconst processedSize = processedFile.fileSize || 0;\nconst fileName = processedFile.fileName || 'unknown';\nconst mimeType = processedFile.mimeType || 'unknown';\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      file_name: fileName,\n      file_size: `${(processedSize / 1024).toFixed(1)} KB`,\n      file_size_bytes: processedSize,\n      mime_type: mimeType,\n      format: \"webp\",\n      quality: 65,\n      resize: \"40%\"\n    },\n    timestamp: new Date().toISOString(),\n    test_success: true\n  },\n  binary: item.binary\n};"
+      },
+      "id": "test-format-001",
+      "name": "Test Result",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        600,
+        200
+      ],
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Test Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Data": {
+      "main": [
+        [
+          {
+            "node": "Download Test Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Test Image": {
+      "main": [
+        [
+          {
+            "node": "1. Resize to 40%",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Resize to 40%": {
+      "main": [
+        [
+          {
+            "node": "2. Convert to WebP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Convert to WebP": {
+      "main": [
+        [
+          {
+            "node": "Test Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["test", "image-processing"],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-22T00:00:00.000Z",
+  "versionId": "1"
+}
