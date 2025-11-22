@@ -1,273 +1,273 @@
 {
-  "name": "Image Compression & Resize (Sora API)",
-  "nodes": [
-    {
-      "parameters": {},
-      "id": "cfcd52e1-17d8-4ea2-938f-b328579c2e11",
-      "name": "When clicking 'Test workflow'",
-      "type": "n8n-nodes-base.manualTrigger",
-      "position": [
-        -1536,
-        112
-      ],
-      "typeVersion": 1
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "prompt-id",
-              "name": "image_prompt",
-              "type": "string",
-              "value": "A beautiful sunset over mountains with golden light reflecting on a calm lake, professional photography, high-definition details"
-            },
-            {
-              "id": "ratio-id",
-              "name": "aspect_ratio",
-              "type": "string",
-              "value": "3:2"
-            },
-            {
-              "id": "api-key-id",
-              "name": "api_key",
-              "type": "string",
-              "value": "sk-nj9WGmymHPuUt9nGDb62BcC33bCc46C3A17b92BaAb5993A7"
-            },
-            {
-              "id": "model-id",
-              "name": "model",
-              "type": "string",
-              "value": "sora_image"
-            }
-          ]
+    "name": "Image Compression & Resize (Sora API)",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "cfcd52e1-17d8-4ea2-938f-b328579c2e11",
+            "name": "When clicking 'Test workflow'",
+            "type": "n8n-nodes-base.manualTrigger",
+            "position": [
+                -1536,
+                112
+            ],
+            "typeVersion": 1
         },
-        "options": {}
-      },
-      "id": "2a4093e0-6620-468a-805c-4aefd9582979",
-      "name": "Set Variables",
-      "type": "n8n-nodes-base.set",
-      "position": [
-        -1328,
-        112
-      ],
-      "typeVersion": 3.4
-    },
-    {
-      "parameters": {
-        "jsCode": "const item = $input.first();\n\n// Get parameters\nconst prompt = item.json.image_prompt;\nconst ratio = item.json.aspect_ratio;\nconst apiKey = item.json.api_key;\nconst model = item.json.model;\n\n// Add ratio marker to prompt if specified\nlet fullPrompt = prompt;\nif (ratio && ['2:3', '3:2', '1:1'].includes(ratio)) {\n  fullPrompt = `${prompt}【${ratio}】`;\n}\n\n// Prepare request body\nconst requestBody = {\n  model: model,\n  messages: [\n    {\n      role: \"user\",\n      content: fullPrompt\n    }\n  ]\n};\n\nreturn {\n  json: {\n    ...item.json,\n    full_prompt: fullPrompt,\n    request_body: JSON.stringify(requestBody),\n    api_key: apiKey\n  }\n};"
-      },
-      "id": "e62ceab7-79e3-4afb-a005-afac03671444",
-      "name": "Prepare Request",
-      "type": "n8n-nodes-base.code",
-      "position": [
-        -1104,
-        112
-      ],
-      "typeVersion": 2
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.laozhang.ai/v1/chat/completions",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $json.api_key }}"
+        {
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "id": "prompt-id",
+                            "name": "image_prompt",
+                            "type": "string",
+                            "value": "A beautiful sunset over mountains with golden light reflecting on a calm lake, professional photography, high-definition details"
+                        },
+                        {
+                            "id": "ratio-id",
+                            "name": "aspect_ratio",
+                            "type": "string",
+                            "value": "3:2"
+                        },
+                        {
+                            "id": "api-key-id",
+                            "name": "api_key",
+                            "type": "string",
+                            "value": "sk-nj9WGmymHPuUt9nGDb62BcC33bCc46C3A17b92BaAb5993A7"
+                        },
+                        {
+                            "id": "model-id",
+                            "name": "model",
+                            "type": "string",
+                            "value": "sora_image"
+                        }
+                    ]
+                },
+                "options": {}
             },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
+            "id": "2a4093e0-6620-468a-805c-4aefd9582979",
+            "name": "Set Variables",
+            "type": "n8n-nodes-base.set",
+            "position": [
+                -1328,
+                112
+            ],
+            "typeVersion": 3.4
         },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ $json.request_body }}",
-        "options": {}
-      },
-      "id": "742f31f0-2fb8-4818-aa9b-97a9be300e1a",
-      "name": "Sora API Request",
-      "type": "n8n-nodes-base.httpRequest",
-      "position": [
-        -880,
-        112
-      ],
-      "typeVersion": 4.2
-    },
-    {
-      "parameters": {
-        "jsCode": "const item = $input.first();\n\ntry {\n  // Extract content from response\n  const content = item.json.choices[0].message.content;\n  \n  // Extract image URLs using regex\n  const imageUrlRegex = /!\\[.*?\\]\\((https?:\\/\\/[^)]+)\\)/g;\n  const matches = [...content.matchAll(imageUrlRegex)];\n  const imageUrls = matches.map(match => match[1]);\n  \n  // Get the original prompt info\n  const originalPrompt = item.json.full_prompt || '';\n  \n  // If no URLs found, return error info\n  if (imageUrls.length === 0) {\n    return [{\n      json: {\n        success: false,\n        error: \"No image URLs found in response\",\n        raw_response: content,\n        generation_success: false\n      }\n    }];\n  }\n  \n  // Create output with extracted URLs\n  const outputs = imageUrls.map((url, index) => ({\n    json: {\n      success: true,\n      image_url: url,\n      image_number: index + 1,\n      total_images: imageUrls.length,\n      prompt: originalPrompt,\n      aspect_ratio: item.json.aspect_ratio,\n      model: item.json.model,\n      cost: \"$0.01\",\n      raw_response: content,\n      generation_success: true,\n      timestamp: new Date().toISOString()\n    }\n  }));\n  \n  return outputs;\n  \n} catch (error) {\n  return [{\n    json: {\n      success: false,\n      error: error.message || \"Failed to process response\",\n      generation_success: false\n    }\n  }];\n}"
-      },
-      "id": "9886f614-32d4-48e1-9dcb-0c625e5cbbab",
-      "name": "Extract Image URLs",
-      "type": "n8n-nodes-base.code",
-      "position": [
-        -656,
-        112
-      ],
-      "typeVersion": 2
-    },
-    {
-      "parameters": {
-        "url": "={{ $json.image_url }}",
-        "options": {
-          "response": {
-            "response": {
-              "responseFormat": "file"
-            }
-          }
+        {
+            "parameters": {
+                "jsCode": "const item = $input.first();\n\n// Get parameters\nconst prompt = item.json.image_prompt;\nconst ratio = item.json.aspect_ratio;\nconst apiKey = item.json.api_key;\nconst model = item.json.model;\n\n// Add ratio marker to prompt if specified\nlet fullPrompt = prompt;\nif (ratio && ['2:3', '3:2', '1:1'].includes(ratio)) {\n  fullPrompt = `${prompt}\u3010${ratio}\u3011`;\n}\n\n// Prepare request body\nconst requestBody = {\n  model: model,\n  messages: [\n    {\n      role: \"user\",\n      content: fullPrompt\n    }\n  ]\n};\n\nreturn {\n  json: {\n    ...item.json,\n    full_prompt: fullPrompt,\n    request_body: JSON.stringify(requestBody),\n    api_key: apiKey\n  }\n};"
+            },
+            "id": "e62ceab7-79e3-4afb-a005-afac03671444",
+            "name": "Prepare Request",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                -1104,
+                112
+            ],
+            "typeVersion": 2
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.laozhang.ai/v1/chat/completions",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "=Bearer {{ $json.api_key }}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json.request_body }}",
+                "options": {}
+            },
+            "id": "742f31f0-2fb8-4818-aa9b-97a9be300e1a",
+            "name": "Sora API Request",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                -880,
+                112
+            ],
+            "typeVersion": 4.2
+        },
+        {
+            "parameters": {
+                "jsCode": "const item = $input.first();\n\ntry {\n  // Extract content from response\n  const content = item.json.choices[0].message.content;\n  \n  // Extract image URLs using regex\n  const imageUrlRegex = /!\\[.*?\\]\\((https?:\\/\\/[^)]+)\\)/g;\n  const matches = [...content.matchAll(imageUrlRegex)];\n  const imageUrls = matches.map(match => match[1]);\n  \n  // Get the original prompt info\n  const originalPrompt = item.json.full_prompt || '';\n  \n  // If no URLs found, return error info\n  if (imageUrls.length === 0) {\n    return [{\n      json: {\n        success: false,\n        error: \"No image URLs found in response\",\n        raw_response: content,\n        generation_success: false\n      }\n    }];\n  }\n  \n  // Create output with extracted URLs\n  const outputs = imageUrls.map((url, index) => ({\n    json: {\n      success: true,\n      image_url: url,\n      image_number: index + 1,\n      total_images: imageUrls.length,\n      prompt: originalPrompt,\n      aspect_ratio: item.json.aspect_ratio,\n      model: item.json.model,\n      cost: \"$0.01\",\n      raw_response: content,\n      generation_success: true,\n      timestamp: new Date().toISOString()\n    }\n  }));\n  \n  return outputs;\n  \n} catch (error) {\n  return [{\n    json: {\n      success: false,\n      error: error.message || \"Failed to process response\",\n      generation_success: false\n    }\n  }];\n}"
+            },
+            "id": "9886f614-32d4-48e1-9dcb-0c625e5cbbab",
+            "name": "Extract Image URLs",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                -656,
+                112
+            ],
+            "typeVersion": 2
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.image_url }}",
+                "options": {
+                    "response": {
+                        "response": {
+                            "responseFormat": "file"
+                        }
+                    }
+                }
+            },
+            "id": "bae89274-3ca9-4209-bb20-b08f3668880d",
+            "name": "Download Image",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                -448,
+                112
+            ],
+            "typeVersion": 4.2,
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\nconst Canvas = require('canvas');\nconst { Image } = Canvas;\n\nreturn Promise.all(items.map(async (item) => {\n  if (!item.binary || !item.binary.data) {\n    return { \n      json: { ...item.json, error: 'No binary data' }, \n      binary: item.binary \n    };\n  }\n\n  try {\n    // Get image buffer\n    const inputBuffer = Buffer.from(item.binary.data.data, 'base64');\n    \n    // Load image to get dimensions\n    const img = new Image();\n    img.src = inputBuffer;\n    \n    const originalWidth = img.width;\n    const originalHeight = img.height;\n    \n    // Calculate 40% size\n    const newWidth = Math.round(originalWidth * 0.4);\n    const newHeight = Math.round(originalHeight * 0.4);\n    \n    // Create canvas with new size\n    const canvas = Canvas.createCanvas(newWidth, newHeight);\n    const ctx = canvas.getContext('2d');\n    \n    // Draw resized image\n    ctx.drawImage(img, 0, 0, newWidth, newHeight);\n    \n    // Convert to WebP\n    const outputBuffer = canvas.toBuffer('image/webp', { quality: 0.65 });\n    \n    return {\n      json: {\n        ...item.json,\n        original_width: originalWidth,\n        original_height: originalHeight,\n        new_width: newWidth,\n        new_height: newHeight,\n        original_size: item.binary.data.fileSize,\n        new_size: outputBuffer.length\n      },\n      binary: {\n        data: {\n          data: outputBuffer.toString('base64'),\n          mimeType: 'image/webp',\n          fileName: (item.binary.data.fileName || 'image').replace(/\\.[^.]+$/, '.webp'),\n          fileExtension: 'webp',\n          fileSize: outputBuffer.length\n        }\n      }\n    };\n  } catch (error) {\n    return {\n      json: {\n        ...item.json,\n        error: error.message\n      },\n      binary: item.binary\n    };\n  }\n}));"
+            },
+            "id": "dafc0a0c-dc4a-4702-bb28-52d64ef06c77",
+            "name": "Resize 40% + WebP",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                -224,
+                112
+            ],
+            "typeVersion": 2
+        },
+        {
+            "parameters": {
+                "jsCode": "const item = $input.first();\n\n// Get file info\nconst originalSize = item.json.original_size || 0;\nconst newSize = item.json.new_size || 0;\nconst compressionRatio = originalSize > 0 ? ((1 - newSize / originalSize) * 100).toFixed(1) : 0;\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      original_size: `${(originalSize / 1024).toFixed(1)} KB`,\n      processed_size: `${(newSize / 1024).toFixed(1)} KB`,\n      compression_ratio: `${compressionRatio}%`,\n      format: \"webp\",\n      quality: 65,\n      resize: \"40%\",\n      dimensions: {\n        original: `${item.json.original_width}x${item.json.original_height}`,\n        resized: `${item.json.new_width}x${item.json.new_height}`\n      }\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
+            },
+            "id": "6fed1060-b185-4f7e-b617-11e37fe7d4e3",
+            "name": "Format Result",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                0,
+                112
+            ],
+            "typeVersion": 2
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\n\n// Create final output\nreturn items.map((item, index) => {\n  const result = {\n    json: {\n      status: \"Complete\",\n      image_number: item.json.image_number || index + 1,\n      prompt: item.json.prompt,\n      aspect_ratio: item.json.aspect_ratio,\n      model: item.json.model,\n      image_url: item.json.image_url,\n      processing: item.json.processing || {},\n      cost: item.json.cost,\n      timestamp: item.json.timestamp\n    },\n    binary: {}\n  };\n  \n  // Add binary data (always processed)\n  if (item.binary && item.binary.data) {\n    result.binary.processed_image = item.binary.data;\n  }\n  \n  return result;\n});"
+            },
+            "id": "b4b1fe3d-1b8a-4803-afc5-09290a19a1bf",
+            "name": "Final Output",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                224,
+                112
+            ],
+            "typeVersion": 2
         }
-      },
-      "id": "bae89274-3ca9-4209-bb20-b08f3668880d",
-      "name": "Download Image",
-      "type": "n8n-nodes-base.httpRequest",
-      "position": [
-        -448,
-        112
-      ],
-      "typeVersion": 4.2,
-      "continueOnFail": true
+    ],
+    "connections": {
+        "When clicking 'Test workflow'": {
+            "main": [
+                [
+                    {
+                        "node": "Set Variables",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Set Variables": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Request": {
+            "main": [
+                [
+                    {
+                        "node": "Sora API Request",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Sora API Request": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Image URLs",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Image URLs": {
+            "main": [
+                [
+                    {
+                        "node": "Download Image",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Download Image": {
+            "main": [
+                [
+                    {
+                        "node": "Resize 40% + WebP",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Resize 40% + WebP": {
+            "main": [
+                [
+                    {
+                        "node": "Format Result",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Result": {
+            "main": [
+                [
+                    {
+                        "node": "Final Output",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
     },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\nconst Canvas = require('canvas');\nconst { Image } = Canvas;\n\nreturn Promise.all(items.map(async (item) => {\n  if (!item.binary || !item.binary.data) {\n    return { \n      json: { ...item.json, error: 'No binary data' }, \n      binary: item.binary \n    };\n  }\n\n  try {\n    // Get image buffer\n    const inputBuffer = Buffer.from(item.binary.data.data, 'base64');\n    \n    // Load image to get dimensions\n    const img = new Image();\n    img.src = inputBuffer;\n    \n    const originalWidth = img.width;\n    const originalHeight = img.height;\n    \n    // Calculate 40% size\n    const newWidth = Math.round(originalWidth * 0.4);\n    const newHeight = Math.round(originalHeight * 0.4);\n    \n    // Create canvas with new size\n    const canvas = Canvas.createCanvas(newWidth, newHeight);\n    const ctx = canvas.getContext('2d');\n    \n    // Draw resized image\n    ctx.drawImage(img, 0, 0, newWidth, newHeight);\n    \n    // Convert to WebP\n    const outputBuffer = canvas.toBuffer('image/webp', { quality: 0.65 });\n    \n    return {\n      json: {\n        ...item.json,\n        original_width: originalWidth,\n        original_height: originalHeight,\n        new_width: newWidth,\n        new_height: newHeight,\n        original_size: item.binary.data.fileSize,\n        new_size: outputBuffer.length\n      },\n      binary: {\n        data: {\n          data: outputBuffer.toString('base64'),\n          mimeType: 'image/webp',\n          fileName: (item.binary.data.fileName || 'image').replace(/\\.[^.]+$/, '.webp'),\n          fileExtension: 'webp',\n          fileSize: outputBuffer.length\n        }\n      }\n    };\n  } catch (error) {\n    return {\n      json: {\n        ...item.json,\n        error: error.message\n      },\n      binary: item.binary\n    };\n  }\n}));"
-      },
-      "id": "dafc0a0c-dc4a-4702-bb28-52d64ef06c77",
-      "name": "Resize 40% + WebP",
-      "type": "n8n-nodes-base.code",
-      "position": [
-        -224,
-        112
-      ],
-      "typeVersion": 2
+    "pinData": {},
+    "settings": {
+        "executionOrder": "v1"
     },
-    {
-      "parameters": {
-        "jsCode": "const item = $input.first();\n\n// Get file info\nconst originalSize = item.json.original_size || 0;\nconst newSize = item.json.new_size || 0;\nconst compressionRatio = originalSize > 0 ? ((1 - newSize / originalSize) * 100).toFixed(1) : 0;\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      original_size: `${(originalSize / 1024).toFixed(1)} KB`,\n      processed_size: `${(newSize / 1024).toFixed(1)} KB`,\n      compression_ratio: `${compressionRatio}%`,\n      format: \"webp\",\n      quality: 65,\n      resize: \"40%\",\n      dimensions: {\n        original: `${item.json.original_width}x${item.json.original_height}`,\n        resized: `${item.json.new_width}x${item.json.new_height}`\n      }\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
-      },
-      "id": "6fed1060-b185-4f7e-b617-11e37fe7d4e3",
-      "name": "Format Result",
-      "type": "n8n-nodes-base.code",
-      "position": [
-        0,
-        112
-      ],
-      "typeVersion": 2
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\n\n// Create final output\nreturn items.map((item, index) => {\n  const result = {\n    json: {\n      status: \"Complete\",\n      image_number: item.json.image_number || index + 1,\n      prompt: item.json.prompt,\n      aspect_ratio: item.json.aspect_ratio,\n      model: item.json.model,\n      image_url: item.json.image_url,\n      processing: item.json.processing || {},\n      cost: item.json.cost,\n      timestamp: item.json.timestamp\n    },\n    binary: {}\n  };\n  \n  // Add binary data (always processed)\n  if (item.binary && item.binary.data) {\n    result.binary.processed_image = item.binary.data;\n  }\n  \n  return result;\n});"
-      },
-      "id": "b4b1fe3d-1b8a-4803-afc5-09290a19a1bf",
-      "name": "Final Output",
-      "type": "n8n-nodes-base.code",
-      "position": [
-        672,
-        112
-      ],
-      "typeVersion": 2
-    }
-  ],
-  "connections": {
-    "When clicking 'Test workflow'": {
-      "main": [
-        [
-          {
-            "node": "Set Variables",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Variables": {
-      "main": [
-        [
-          {
-            "node": "Prepare Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Request": {
-      "main": [
-        [
-          {
-            "node": "Sora API Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sora API Request": {
-      "main": [
-        [
-          {
-            "node": "Extract Image URLs",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract Image URLs": {
-      "main": [
-        [
-          {
-            "node": "Download Image",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Download Image": {
-      "main": [
-        [
-          {
-            "node": "Resize 40% + WebP",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Resize 40% + WebP": {
-      "main": [
-        [
-          {
-            "node": "Format Result",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format Result": {
-      "main": [
-        [
-          {
-            "node": "Final Output",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
-  "pinData": {},
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "staticData": null,
-  "tags": [],
-  "triggerCount": 0,
-  "updatedAt": "2025-11-22T00:00:00.000Z",
-  "versionId": "1"
+    "staticData": null,
+    "tags": [],
+    "triggerCount": 0,
+    "updatedAt": "2025-11-22T00:00:00.000Z",
+    "versionId": "1"
 }
