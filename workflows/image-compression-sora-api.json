@@ -133,33 +133,42 @@
     },
     {
       "parameters": {
-        "jsCode": "// Этап 1: Resize до 40% с sharp\nconst sharp = require('sharp');\nconst items = $input.all();\n\nreturn Promise.all(items.map(async (item) => {\n  if (!item.binary || !item.binary.data) {\n    return { \n      json: { ...item.json, error: 'No binary data for resize' }, \n      binary: item.binary \n    };\n  }\n\n  const inputBuffer = Buffer.from(item.binary.data.data, 'base64');\n  const metadata = await sharp(inputBuffer).metadata();\n\n  const resizedBuffer = await sharp(inputBuffer)\n    .rotate()\n    .resize({\n      width: Math.round(metadata.width * 0.4),\n      height: Math.round(metadata.height * 0.4),\n      fit: 'contain',\n      withoutEnlargement: true\n    })\n    .toBuffer();\n\n  const newName = item.binary.data.fileName.replace(/\\.[^\\.]+$/, '_resized.png');\n\n  return {\n    json: { \n      ...item.json, \n      resize_note: 'Resized to 40%',\n      original_width: metadata.width,\n      original_height: metadata.height,\n      new_width: Math.round(metadata.width * 0.4),\n      new_height: Math.round(metadata.height * 0.4)\n    },\n    binary: {\n      data: {\n        data: resizedBuffer.toString('base64'),\n        mimeType: 'image/png',\n        fileName: newName,\n        fileExtension: 'png',\n        fileSize: resizedBuffer.length\n      }\n    }\n  };\n}));"
+        "operation": "resize",
+        "resizeOption": "percentage",
+        "resizePercentage": 40,
+        "options": {}
       },
       "id": "dafc0a0c-dc4a-4702-bb28-52d64ef06c77",
-      "name": "1. Уменьшить до 40% (Sharp)",
-      "type": "n8n-nodes-base.code",
+      "name": "1. Resize to 40%",
+      "type": "n8n-nodes-base.editImage",
       "position": [
         -224,
         112
       ],
-      "typeVersion": 2
+      "typeVersion": 1
     },
     {
       "parameters": {
-        "jsCode": "// Этап 2: Compress до 65% WebP с sharp\nconst sharp = require('sharp');\nconst items = $input.all();\n\nreturn Promise.all(items.map(async (item) => {\n  if (!item.binary || !item.binary.data) {\n    return { \n      json: { ...item.json, error: 'No binary data for compress' }, \n      binary: item.binary \n    };\n  }\n\n  const inputBuffer = Buffer.from(item.binary.data.data, 'base64');\n\n  const compressedBuffer = await sharp(inputBuffer)\n    .webp({ quality: 65, effort: 6 })\n    .toBuffer();\n\n  const newName = item.binary.data.fileName.replace(/\\.[^\\.]+$/, '.webp');\n\n  // Сохраняем оригинальный размер для расчёта в следующем узле\n  item.json.original_size = item.binary.data.fileSize || 0;\n\n  return {\n    json: { \n      ...item.json, \n      compress_note: 'Compressed to WebP 65%' \n    },\n    binary: {\n      data: {\n        data: compressedBuffer.toString('base64'),\n        mimeType: 'image/webp',\n        fileName: newName,\n        fileExtension: 'webp',\n        fileSize: compressedBuffer.length\n      }\n    }\n  };\n}));"
+        "operation": "resize",
+        "resizeOption": "percentage",
+        "resizePercentage": 100,
+        "options": {
+          "format": "webp",
+          "quality": 65
+        }
       },
       "id": "76efbdda-6b4d-4c05-855a-ea7096cde708",
-      "name": "2. Сжать (webp 65%) (Sharp)",
-      "type": "n8n-nodes-base.code",
+      "name": "2. Convert to WebP",
+      "type": "n8n-nodes-base.editImage",
       "position": [
         0,
         112
       ],
-      "typeVersion": 2
+      "typeVersion": 1
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first();\n\n// Get original file info (from json.original_size, set in compress)\nconst originalSize = item.json.original_size || 0;\nconst processedFile = item.binary?.data || {};\nconst processedSize = processedFile.fileSize || 0;\n\n// Calculate compression ratio\nconst compressionRatio = originalSize > 0 ? \n  ((1 - processedSize / originalSize) * 100).toFixed(1) : 0;\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      original_size: `${(originalSize / 1024).toFixed(1)} KB`,\n      processed_size: `${(processedSize / 1024).toFixed(1)} KB`,\n      compression_ratio: `${compressionRatio}%`,\n      format: \"webp\",\n      quality: 65,\n      resize: \"40%\",\n      dimensions: {\n        original: `${item.json.original_width || 'N/A'}x${item.json.original_height || 'N/A'}`,\n        resized: `${item.json.new_width || 'N/A'}x${item.json.new_height || 'N/A'}`\n      }\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
+        "jsCode": "const item = $input.first();\n\n// Get file info\nconst processedFile = item.binary?.data || {};\nconst processedSize = processedFile.fileSize || 0;\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      file_size: `${(processedSize / 1024).toFixed(1)} KB`,\n      format: \"webp\",\n      quality: 65,\n      resize: \"40%\"\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
       },
       "id": "6fed1060-b185-4f7e-b617-11e37fe7d4e3",
       "name": "Format Processed",
@@ -244,25 +253,25 @@
       "main": [
         [
           {
-            "node": "1. Уменьшить до 40% (Sharp)",
+            "node": "1. Resize to 40%",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "1. Уменьшить до 40% (Sharp)": {
+    "1. Resize to 40%": {
       "main": [
         [
           {
-            "node": "2. Сжать (webp 65%) (Sharp)",
+            "node": "2. Convert to WebP",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "2. Сжать (webp 65%) (Sharp)": {
+    "2. Convert to WebP": {
       "main": [
         [
           {
