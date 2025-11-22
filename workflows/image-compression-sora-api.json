@@ -163,13 +163,10 @@
                 "width": "={{ $json.target_width }}",
                 "height": "={{ $json.target_height }}",
                 "resizeOption": "ignoreAspectRatio",
-                "options": {
-                    "format": "webp",
-                    "quality": 65
-                }
+                "options": {}
             },
             "id": "dafc0a0c-dc4a-4702-bb28-52d64ef06c77",
-            "name": "Resize & Convert WebP",
+            "name": "Resize to 40%",
             "type": "n8n-nodes-base.editImage",
             "position": [
                 128,
@@ -179,7 +176,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const item = $input.first();\n\n// Get file info from binary\nconst processedFile = item.binary?.data || {};\nconst processedSize = processedFile.fileSize || 0;\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      processed_size: `${(processedSize / 1024).toFixed(1)} KB`,\n      format: \"webp\",\n      quality: 65,\n      resize: \"40%\",\n      dimensions: {\n        original: `${item.json.original_width}x${item.json.original_height}`,\n        resized: `${item.json.target_width}x${item.json.target_height}`\n      }\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
+                "jsCode": "const item = $input.first();\n\n// Get file info from binary\nconst processedFile = item.binary?.data || {};\nconst processedSize = processedFile.fileSize || 0;\nconst mimeType = processedFile.mimeType || 'image/png';\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      processed_size: `${(processedSize / 1024).toFixed(1)} KB`,\n      format: mimeType.split('/')[1] || 'png',\n      resize: \"40%\",\n      dimensions: {\n        original: `${item.json.original_width}x${item.json.original_height}`,\n        resized: `${item.json.target_width}x${item.json.target_height}`\n      }\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
             },
             "id": "6fed1060-b185-4f7e-b617-11e37fe7d4e3",
             "name": "Format Result",
@@ -286,14 +283,14 @@
             "main": [
                 [
                     {
-                        "node": "Resize & Convert WebP",
+                        "node": "Resize to 40%",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Resize & Convert WebP": {
+        "Resize to 40%": {
             "main": [
                 [
                     {
