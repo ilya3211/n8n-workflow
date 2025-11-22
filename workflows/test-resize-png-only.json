@@ -1,0 +1,113 @@
+{
+  "name": "Image Resize 40% (PNG Format)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-main",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [240, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "url": "https://mycnd-hz.oss-cn-hangzhou.aliyuncs.com/sora/00d81259-aef8-48ca-8a58-caf367bc5af8.png",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "download-main",
+      "name": "Download Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [460, 300],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "operation": "information"
+      },
+      "id": "info-main",
+      "name": "Get Image Info",
+      "type": "n8n-nodes-base.editImage",
+      "position": [680, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\n// Get image dimensions\nconst width = item.json.size?.width || item.json.width || 1536;\nconst height = item.json.size?.height || item.json.height || 1024;\n\n// Calculate 40% dimensions\nconst newWidth = Math.round(width * 0.4);\nconst newHeight = Math.round(height * 0.4);\n\n// Store original file size\nconst originalSize = item.binary?.data?.fileSize || 0;\n\nreturn {\n  json: {\n    ...item.json,\n    original_width: width,\n    original_height: height,\n    target_width: newWidth,\n    target_height: newHeight,\n    original_size_bytes: originalSize,\n    original_size_mb: (originalSize / 1024 / 1024).toFixed(2)\n  },\n  binary: item.binary\n};"
+      },
+      "id": "calc-main",
+      "name": "Calculate 40% Size",
+      "type": "n8n-nodes-base.code",
+      "position": [900, 300],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "width": "={{ $json.target_width }}",
+        "height": "={{ $json.target_height }}",
+        "resizeOption": "ignoreAspectRatio",
+        "options": {}
+      },
+      "id": "resize-main",
+      "name": "Resize to 40% (PNG)",
+      "type": "n8n-nodes-base.editImage",
+      "position": [1120, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "information"
+      },
+      "id": "info-final-main",
+      "name": "Check Result Info",
+      "type": "n8n-nodes-base.editImage",
+      "position": [1340, 300],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first();\n\n// Get processed file info\nconst processedSize = item.binary?.data?.fileSize || 0;\nconst processedWidth = item.json.size?.width || item.json.width || 0;\nconst processedHeight = item.json.size?.height || item.json.height || 0;\n\n// Get original info\nconst originalSize = item.json.original_size_bytes || 0;\nconst originalWidth = item.json.original_width || 0;\nconst originalHeight = item.json.original_height || 0;\n\n// Calculate compression\nconst compressionRatio = originalSize > 0 ? \n  ((1 - processedSize / originalSize) * 100).toFixed(1) : 0;\n\nreturn {\n  json: {\n    ...item.json,\n    result: {\n      status: \"completed\",\n      original: {\n        dimensions: `${originalWidth}x${originalHeight}`,\n        size: `${(originalSize / 1024 / 1024).toFixed(2)} MB`,\n        size_kb: `${(originalSize / 1024).toFixed(1)} KB`\n      },\n      processed: {\n        dimensions: `${processedWidth}x${processedHeight}`,\n        size: `${(processedSize / 1024 / 1024).toFixed(2)} MB`,\n        size_kb: `${(processedSize / 1024).toFixed(1)} KB`,\n        format: item.binary?.data?.mimeType || 'unknown'\n      },\n      compression_ratio: `${compressionRatio}%`,\n      resize_ratio: \"40%\"\n    }\n  },\n  binary: item.binary\n};"
+      },
+      "id": "format-main",
+      "name": "Format Result",
+      "type": "n8n-nodes-base.code",
+      "position": [1560, 300],
+      "typeVersion": 2
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{"node": "Download Image", "type": "main", "index": 0}]]
+    },
+    "Download Image": {
+      "main": [[{"node": "Get Image Info", "type": "main", "index": 0}]]
+    },
+    "Get Image Info": {
+      "main": [[{"node": "Calculate 40% Size", "type": "main", "index": 0}]]
+    },
+    "Calculate 40% Size": {
+      "main": [[{"node": "Resize to 40% (PNG)", "type": "main", "index": 0}]]
+    },
+    "Resize to 40% (PNG)": {
+      "main": [[{"node": "Check Result Info", "type": "main", "index": 0}]]
+    },
+    "Check Result Info": {
+      "main": [[{"node": "Format Result", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-22T00:00:00.000Z",
+  "versionId": "1"
+}
