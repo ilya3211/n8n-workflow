@@ -176,13 +176,43 @@
         },
         {
             "parameters": {
-                "jsCode": "const item = $input.first();\n\n// Get file info from binary\nconst processedFile = item.binary?.data || {};\nconst processedSize = processedFile.fileSize || 0;\nconst mimeType = processedFile.mimeType || 'image/png';\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      processed_size: `${(processedSize / 1024).toFixed(1)} KB`,\n      format: mimeType.split('/')[1] || 'png',\n      resize: \"40%\",\n      dimensions: {\n        original: `${item.json.original_width}x${item.json.original_height}`,\n        resized: `${item.json.target_width}x${item.json.target_height}`\n      }\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
+                "jsCode": "const item = $input.first();\n\n// Store PNG size before WebP conversion\nconst pngSize = item.binary?.data?.fileSize || 0;\n\nreturn {\n  json: {\n    ...item.json,\n    png_size_after_resize: pngSize\n  },\n  binary: item.binary\n};"
+            },
+            "id": "store-png-size-001",
+            "name": "Store PNG Size",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                256,
+                112
+            ],
+            "typeVersion": 2
+        },
+        {
+            "parameters": {
+                "operation": "transparent",
+                "options": {
+                    "format": "webp",
+                    "quality": 90
+                }
+            },
+            "id": "convert-webp-001",
+            "name": "Convert to WebP",
+            "type": "n8n-nodes-base.editImage",
+            "position": [
+                384,
+                112
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "jsCode": "const item = $input.first();\n\n// Get file info from binary\nconst processedFile = item.binary?.data || {};\nconst webpSize = processedFile.fileSize || 0;\nconst pngSize = item.json.png_size_after_resize || 0;\nconst mimeType = processedFile.mimeType || 'image/webp';\n\n// Calculate additional compression from WebP\nconst webpCompressionRatio = pngSize > 0 ? \n  ((1 - webpSize / pngSize) * 100).toFixed(1) : 0;\n\nreturn {\n  json: {\n    ...item.json,\n    processing: {\n      status: \"processed\",\n      png_size_after_resize: `${(pngSize / 1024).toFixed(1)} KB`,\n      webp_size_final: `${(webpSize / 1024).toFixed(1)} KB`,\n      webp_compression: `${webpCompressionRatio}%`,\n      format: mimeType.split('/')[1] || 'webp',\n      quality: 90,\n      resize: \"40%\",\n      dimensions: {\n        original: `${item.json.original_width}x${item.json.original_height}`,\n        resized: `${item.json.target_width}x${item.json.target_height}`\n      }\n    },\n    timestamp: new Date().toISOString()\n  },\n  binary: item.binary\n};"
             },
             "id": "6fed1060-b185-4f7e-b617-11e37fe7d4e3",
             "name": "Format Result",
             "type": "n8n-nodes-base.code",
             "position": [
-                304,
+                512,
                 112
             ],
             "typeVersion": 2
@@ -291,6 +321,28 @@
             ]
         },
         "Resize to 40%": {
+            "main": [
+                [
+                    {
+                        "node": "Store PNG Size",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Store PNG Size": {
+            "main": [
+                [
+                    {
+                        "node": "Convert to WebP",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Convert to WebP": {
             "main": [
                 [
                     {
